@@ -1,0 +1,9 @@
+{
+  "go.useLanguageServer": true,
+  "go.lintTool": "staticcheck",
+  "go.formatTool": "gofmt",
+  "go.testFlags": ["-v"],
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}
