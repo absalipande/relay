@@ -44,7 +44,7 @@ The initial auth plugin is credential/password. OAuth providers can be added lat
 
 ## Run locally
 
-Go is not currently available on this machine's shell PATH. After installing Go, run:
+After installing Go, run:
 
 ```sh
 cp .env.example .env
@@ -62,11 +62,14 @@ Before running the API, set `LIMEN_SECRET` in `.env` to a random 32-byte value.
 
 ## Auth migrations
 
-Limen needs its own auth tables. In development, Relay enables Limen's CLI schema export so the first app run can create `.limen/schemas.json`. After Go and the Limen CLI are available, generate the Limen migrations for Postgres and apply them with your migration tool:
+Limen needs its own auth tables. In development, Relay enables Limen's CLI schema export so `go run ./cmd/authschema` can create `.limen/schemas.json`. After Go and the Limen CLI are available, generate the Limen migrations for Postgres and apply them with your migration tool:
 
 ```sh
-limen generate migrations --driver postgres --dsn "$DATABASE_URL"
+go run ./cmd/authschema
+limen generate migrations --driver postgres --dsn "$DATABASE_URL" --output ./migrations/auth
 ```
+
+See [docs/local-setup.md](docs/local-setup.md) for the full local database setup.
 
 ## Testing
 
@@ -77,3 +80,7 @@ go test ./...
 ```
 
 The initial automated tests cover config loading, permission policy helpers, JSON/error responses, and the health route.
+
+## Backend progress
+
+Backend implementation progress is tracked in [docs/backend-checklist.md](docs/backend-checklist.md).

@@ -4,11 +4,11 @@ import "testing"
 
 func TestWorkspacePermissions(t *testing.T) {
 	tests := []struct {
-		name        string
-		role        string
-		canInvite   bool
-		canDelete   bool
-		canCreate   bool
+		name      string
+		role      string
+		canInvite bool
+		canDelete bool
+		canCreate bool
 	}{
 		{name: "owner", role: WorkspaceRoleOwner, canInvite: true, canDelete: true, canCreate: true},
 		{name: "admin", role: WorkspaceRoleAdmin, canInvite: true, canDelete: false, canCreate: true},

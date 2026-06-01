@@ -12,13 +12,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/thecodearcher/limen"
-	gormadapter "github.com/thecodearcher/limen/adapters/gorm"
-	credentialpassword "github.com/thecodearcher/limen/plugins/credential-password"
 
+	"github.com/absalipande/relay/internal/app"
 	"github.com/absalipande/relay/internal/config"
 	"github.com/absalipande/relay/internal/database"
+	"github.com/absalipande/relay/internal/id"
 	relaymw "github.com/absalipande/relay/internal/middleware"
+	"github.com/absalipande/relay/internal/workspace"
 )
 
 func main() {
@@ -46,24 +46,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	limenAuth, err := limen.New(&limen.Config{
-		BaseURL:  cfg.BaseURL,
-		Database: gormadapter.New(authDB),
-		Secret:   []byte(cfg.LimenSecret),
-		CLI: &limen.CLIConfig{
-			Enabled: cfg.AppEnv != "production",
-		},
-		HTTP: limen.NewDefaultHTTPConfig(
-			limen.WithHTTPCookieSecure(cfg.AppEnv == "production"),
-		),
-		Plugins: []limen.Plugin{
-			credentialpassword.New(),
-		},
-	})
+	limenAuth, err := app.NewAuth(authDB, cfg)
 	if err != nil {
 		logger.Error("initialize auth", "error", err)
 		os.Exit(1)
 	}
+
+	workspaceRepository := workspace.NewRepository(db)
+	workspaceService := workspace.NewService(workspaceRepository, id.NewUUIDGenerator())
+	workspaceHandler := workspace.NewHandler(workspaceService)
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
@@ -74,6 +65,10 @@ func main() {
 	registerHealthRoutes(router)
 
 	router.Handle("/auth/*", limenAuth.Handler())
+	router.Group(func(r chi.Router) {
+		r.Use(relaymw.RequireSession(limenAuth))
+		workspace.RegisterRoutes(r, workspaceHandler)
+	})
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
