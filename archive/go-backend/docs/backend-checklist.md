@@ -1,6 +1,8 @@
-# Relay Backend Checklist
+# Relay Go Backend Checklist
 
-This checklist tracks backend progress against the planning document.
+This checklist tracks the earlier Go backend prototype. It is preserved for history, but it is no longer the active technical direction after the stack pivot to Next.js, Fastify, and Supabase.
+
+See [technical-plan.md](technical-plan.md) for the active stack plan.
 
 ## Phase 1 - Backend Foundation
 

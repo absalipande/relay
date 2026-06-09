@@ -8,7 +8,7 @@ The product name is Relay. Any older planning references to Worklane should be r
 
 ## MVP Core
 
-- [ ] Authentication and session-based access
+- [ ] Authentication with Supabase Auth
 - [ ] Workspaces and workspace members
 - [ ] Workspace roles and permissions
 - [ ] Projects inside workspaces
