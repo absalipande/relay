@@ -25,7 +25,8 @@ This checklist tracks backend progress against the planning document.
 - [x] UUID ID generator shared by Limen and Relay app tables
 - [x] Session middleware for protected Relay routes
 - [x] Add auth schema export command
-- [ ] Generate and apply Limen auth migrations locally
+- [x] Generate and apply Limen auth migrations locally
+- [x] Use separate Goose version tables for auth and app migrations
 - [ ] Add OAuth provider plugin
 - [ ] Add email verification flow
 
@@ -64,6 +65,17 @@ This checklist tracks backend progress against the planning document.
 - [ ] Comments
 - [ ] Activity logs
 
+## Future Backend - AI Assistant
+
+- [ ] AI conversation tables
+- [ ] AI message tables
+- [ ] Context reference tables for linked projects, tasks, comments, files, and activity logs
+- [ ] Permission checks before AI context retrieval
+- [ ] Provider abstraction for model calls
+- [ ] Streaming assistant endpoint
+- [ ] Save AI output as task, comment, project note, or workspace note
+- [ ] Activity/audit logs for AI-created artifacts
+
 ## Test Commands
 
 ```sh
@@ -78,3 +90,15 @@ go test ./cmd/api -v
 Limen owns auth tables, including `users`. Generate and apply Limen auth migrations before applying Relay app migrations.
 
 Relay app migrations currently start with workspace tables and assume Limen's `users(id)` table exists with UUID primary keys.
+
+Local migration flow has been verified with:
+
+```sh
+make auth-schema
+make auth-migrations
+make migrate-auth
+make migrate-app
+make run
+```
+
+Auth migrations use `goose_auth_db_version`; Relay app migrations use `goose_app_db_version`.

@@ -26,16 +26,17 @@ cp .env.example .env
 Use a local database URL like:
 
 ```sh
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/relay?sslmode=disable
+DATABASE_URL=postgres://absalipande@localhost:5432/relay?sslmode=disable
 ```
+
+Homebrew PostgreSQL usually creates a database role matching your macOS username, not a `postgres` role.
 
 `LIMEN_SECRET` must be exactly 32 bytes.
 
 ## Install CLIs
 
 ```sh
-/Users/absalipande/sdk/go1.26.3/bin/go install github.com/thecodearcher/limen/cmd/limen@latest
-/Users/absalipande/sdk/go1.26.3/bin/go install github.com/pressly/goose/v3/cmd/goose@latest
+make install-tools
 ```
 
 The project Makefile calls the installed binaries by absolute path:
@@ -76,6 +77,8 @@ First export Limen's schema JSON:
 make auth-schema
 ```
 
+If this reports `DATABASE_URL is required`, make sure you are using the latest Makefile or create `.env` from `.env.example`.
+
 Then generate SQL migrations:
 
 ```sh
@@ -87,6 +90,8 @@ This writes Limen migrations to:
 ```txt
 migrations/auth/
 ```
+
+Limen emits paired `*.up.sql` and `*.down.sql` files. Relay converts them into Goose-compatible single migration files automatically.
 
 ## Apply Migrations
 
@@ -100,6 +105,29 @@ Then apply Relay app migrations:
 
 ```sh
 make migrate-app
+```
+
+Relay uses separate Goose version tables for auth and app migrations:
+
+```txt
+goose_auth_db_version
+goose_app_db_version
+```
+
+This keeps Limen-generated auth migration versions separate from Relay app migration versions.
+
+Known-good local run:
+
+```txt
+make migrate-auth
+make migrate-app
+make run
+```
+
+Expected successful API startup:
+
+```txt
+api listening addr=:8080 env=development
 ```
 
 ## Run Tests

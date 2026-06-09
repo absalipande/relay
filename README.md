@@ -44,12 +44,17 @@ The initial auth plugin is credential/password. OAuth providers can be added lat
 
 ## Run locally
 
-After installing Go, run:
+After installing Go and PostgreSQL, run:
 
 ```sh
 cp .env.example .env
-go mod tidy
-go run ./cmd/api
+make install-tools
+make test
+make auth-schema
+make auth-migrations
+make migrate-auth
+make migrate-app
+make run
 ```
 
 Then visit:
@@ -62,11 +67,11 @@ Before running the API, set `LIMEN_SECRET` in `.env` to a random 32-byte value.
 
 ## Auth migrations
 
-Limen needs its own auth tables. In development, Relay enables Limen's CLI schema export so `go run ./cmd/authschema` can create `.limen/schemas.json`. After Go and the Limen CLI are available, generate the Limen migrations for Postgres and apply them with your migration tool:
+Limen needs its own auth tables. In development, Relay enables Limen's CLI schema export so `make auth-schema` can create `.limen/schemas.json`. Then `make auth-migrations` generates Goose-compatible auth migrations.
 
 ```sh
-go run ./cmd/authschema
-limen generate migrations --driver postgres --dsn "$DATABASE_URL" --output ./migrations/auth
+make auth-schema
+make auth-migrations
 ```
 
 See [docs/local-setup.md](docs/local-setup.md) for the full local database setup.
@@ -84,3 +89,5 @@ The initial automated tests cover config loading, permission policy helpers, JSO
 ## Backend progress
 
 Backend implementation progress is tracked in [docs/backend-checklist.md](docs/backend-checklist.md).
+
+Product feature planning is tracked in [docs/product-roadmap.md](docs/product-roadmap.md).
