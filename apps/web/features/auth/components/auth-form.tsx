@@ -1,28 +1,54 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 
-type AuthMode = "sign-in" | "sign-up";
+export type AuthMode = "sign-in" | "sign-up";
 
-export function AuthForm() {
-  const [mode, setMode] = useState<AuthMode>("sign-in");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const authSchema = z.object({
+  email: z.email("Enter a valid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+});
+
+type AuthFormValues = z.infer<typeof authSchema>;
+
+type AuthFormProps = {
+  mode: AuthMode;
+  onModeChange: (mode: AuthMode) => void;
+};
+
+export function AuthForm({ mode, onModeChange }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+  } = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitAuth(values: AuthFormValues) {
     setIsLoading(true);
     setMessage(null);
 
     const authCall =
       mode === "sign-in"
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({ email, password });
+        ? supabase.auth.signInWithPassword(values)
+        : supabase.auth.signUp(values);
 
     const { error } = await authCall;
 
@@ -45,83 +71,89 @@ export function AuthForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-2 overflow-hidden rounded-lg bg-white text-sm font-semibold">
-        <button
-          type="button"
-          onClick={() => setMode("sign-in")}
-          className={`border-b-2 px-4 py-3 transition ${
-            mode === "sign-in"
-              ? "border-[#007AFF] text-[#007AFF]"
-              : "border-transparent text-slate-500"
-          }`}
+    <form onSubmit={handleSubmit(submitAuth)} className="space-y-5">
+      <Tabs
+        value={mode}
+        onValueChange={(value) => onModeChange(value as AuthMode)}
+      >
+        <TabsList
+          variant="line"
+          className="grid h-auto w-full grid-cols-2 gap-0 bg-white p-0 text-sm font-semibold"
         >
-          Sign In
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("sign-up")}
-          className={`border-b-2 px-4 py-3 transition ${
-            mode === "sign-up"
-              ? "border-[#007AFF] text-[#007AFF]"
-              : "border-transparent text-slate-500"
-          }`}
-        >
-          Sign Up
-        </button>
-      </div>
+          <TabsTrigger
+            value="sign-in"
+            className="rounded-none border-x-0 border-t-0 border-b-2 border-transparent px-4 py-3 text-slate-500 shadow-none after:hidden focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-[#007AFF] focus-visible:ring-0 focus-visible:outline-none data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-[#007AFF] data-[state=active]:bg-transparent data-[state=active]:text-[#007AFF] data-active:border-x-0 data-active:border-t-0 data-active:border-b-[#007AFF] data-active:bg-transparent data-active:text-[#007AFF]"
+          >
+            Sign In
+          </TabsTrigger>
+          <TabsTrigger
+            value="sign-up"
+            className="rounded-none border-x-0 border-t-0 border-b-2 border-transparent px-4 py-3 text-slate-500 shadow-none after:hidden focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-[#007AFF] focus-visible:ring-0 focus-visible:outline-none data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-[#007AFF] data-[state=active]:bg-transparent data-[state=active]:text-[#007AFF] data-active:border-x-0 data-active:border-t-0 data-active:border-b-[#007AFF] data-active:bg-transparent data-active:text-[#007AFF]"
+          >
+            Sign Up
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      <label className="block space-y-3">
-        <span className="text-sm font-semibold text-slate-800">
+      <Label className="block space-y-3">
+        <span className="block text-sm font-semibold text-slate-800">
           Email address
         </span>
         <span className="mt-1.5 flex min-h-[42px] items-center gap-5 rounded-lg border border-[#E8EEF7] px-4 py-2 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
           <MailIcon />
-          <input
+          <Input
             type="email"
-            required
             placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="h-full min-w-0 flex-1 appearance-none bg-transparent text-base text-slate-950 outline-none placeholder:text-slate-400 focus:outline-none"
+            {...register("email")}
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-slate-950 shadow-none outline-none placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
           />
         </span>
-      </label>
+        {errors.email ? (
+          <span className="mt-1 block text-xs font-medium text-red-600">
+            {errors.email.message}
+          </span>
+        ) : null}
+      </Label>
 
-      <label className="block space-y-3">
-        <span className="text-sm font-semibold text-slate-800">
+      <Label className="block space-y-3">
+        <span className="block text-sm font-semibold text-slate-800">
           Password
         </span>
         <span className="mt-1.5 flex min-h-[42px] items-center gap-5 rounded-lg border border-[#E8EEF7] px-4 py-2 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
           <LockIcon />
-          <input
+          <Input
             type={showPassword ? "text" : "password"}
-            required
-            minLength={6}
             placeholder="Enter your password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="h-full min-w-0 flex-1 appearance-none bg-transparent text-base text-slate-950 outline-none placeholder:text-slate-400 focus:outline-none"
+            {...register("password")}
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-slate-950 shadow-none outline-none placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setShowPassword((value) => !value)}
-            className="text-slate-400 transition hover:text-slate-600"
+            className="size-6 text-slate-400 hover:bg-transparent hover:text-slate-600"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             <EyeIcon />
-          </button>
+          </Button>
         </span>
-      </label>
+        {errors.password ? (
+          <span className="mt-1 block text-xs font-medium text-red-600">
+            {errors.password.message}
+          </span>
+        ) : null}
+      </Label>
 
       {mode === "sign-in" ? (
         <div className="text-right">
-          <button
+          <Button
             type="button"
-            className="text-sm font-semibold text-[#007AFF] transition hover:text-[#312ECB]"
+            variant="link"
+            className="h-auto p-0 text-sm font-semibold text-[#007AFF] hover:text-[#312ECB]"
           >
             Forgot password?
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -131,17 +163,17 @@ export function AuthForm() {
         </p>
       ) : null}
 
-      <button
+      <Button
         type="submit"
         disabled={isLoading}
-        className="h-12 min-h-12 w-full appearance-none rounded-lg bg-[#007AFF] px-5 text-base font-semibold leading-none text-white shadow-lg shadow-[#312ECB]/10 transition hover:bg-[#006be0] disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="h-12 min-h-12 w-full appearance-none rounded-lg bg-[#007AFF] px-5 text-base font-semibold leading-none text-white shadow-lg shadow-[#312ECB]/10 hover:bg-[#006be0] disabled:cursor-not-allowed disabled:bg-slate-400"
       >
         {isLoading
           ? "Working..."
           : mode === "sign-in"
             ? "Sign In"
             : "Create account"}
-      </button>
+      </Button>
 
       <div className="flex items-center gap-5 text-slate-400">
         <span className="h-px flex-1 bg-slate-200" />
@@ -150,26 +182,30 @@ export function AuthForm() {
       </div>
 
       <div className="space-y-4">
-        <button
+        <Button
           type="button"
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#E8EEF7] py-3 text-base font-semibold text-slate-700 shadow-sm shadow-slate-900/[0.015] transition hover:border-slate-300 hover:bg-slate-50"
+          variant="outline"
+          className="h-auto w-full gap-3 rounded-lg border-[#E8EEF7] py-3 text-base font-semibold text-slate-700 shadow-sm shadow-slate-900/[0.015] hover:border-slate-300 hover:bg-slate-50"
         >
           <span className="text-xl font-bold text-[#ea4335]">G</span>
           Continue with Google
-        </button>
+        </Button>
       </div>
 
       <p className="pt-2 text-center text-sm text-slate-500">
         {mode === "sign-in"
           ? "Don't have an account? "
           : "Already have an account? "}
-        <button
+        <Button
           type="button"
-          onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
-          className="font-semibold text-[#007AFF] hover:text-[#312ECB]"
+          variant="link"
+          onClick={() =>
+            onModeChange(mode === "sign-in" ? "sign-up" : "sign-in")
+          }
+          className="h-auto p-0 font-semibold text-[#007AFF] hover:text-[#312ECB]"
         >
           {mode === "sign-in" ? "Sign up" : "Sign in"}
-        </button>
+        </Button>
       </p>
     </form>
   );

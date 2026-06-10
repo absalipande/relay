@@ -1,5 +1,5 @@
-import { AuthForm } from "@/features/auth/components/auth-form";
 import { AuthHero } from "@/features/auth/components/auth-hero";
+import { AuthPanel } from "@/features/auth/components/auth-panel";
 import { WorkspaceEmptyState } from "@/features/workspaces/components/workspace-empty-state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,23 +18,7 @@ export default async function Home() {
             {user ? (
               <WorkspaceEmptyState email={user.email ?? "Unknown user"} />
             ) : (
-              <>
-                <div className="mb-7 text-center">
-                  <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-                    <img src="/relay-logo.svg" alt="" className="h-10 w-auto" />
-                    <span className="text-2xl font-semibold tracking-tight">
-                      relay
-                    </span>
-                  </div>
-                  <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-                    Welcome back
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Sign in to continue to Relay
-                  </p>
-                </div>
-                <AuthForm />
-              </>
+              <AuthPanel />
             )}
           </div>
         </section>
