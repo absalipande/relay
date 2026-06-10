@@ -1,8 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +27,7 @@ type AuthFormProps = {
 };
 
 export function AuthForm({ mode, onModeChange }: AuthFormProps) {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,11 +65,12 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
     setMessage(
       mode === "sign-up"
         ? "Account created. Check your email if confirmation is enabled, then sign in."
-        : "Signed in. Refreshing your workspace.",
+        : "Signed in. Opening your workspace.",
     );
 
     if (mode === "sign-in") {
-      window.location.reload();
+      router.push("/app");
+      router.refresh();
     }
   }
 
@@ -99,13 +103,13 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
         <span className="block text-sm font-semibold text-slate-800">
           Email address
         </span>
-        <span className="mt-1.5 flex min-h-[42px] items-center gap-5 rounded-lg border border-[#E8EEF7] px-4 py-2 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
+        <span className="mt-1.5 flex h-12 items-center gap-4 rounded-lg border border-[#E8EEF7] bg-white px-4 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
           <MailIcon />
           <Input
             type="email"
             placeholder="you@example.com"
             {...register("email")}
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-slate-950 shadow-none outline-none placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
+            className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-base leading-none text-slate-950 caret-[#007AFF] shadow-none outline-none selection:bg-blue-100 placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
           />
         </span>
         {errors.email ? (
@@ -119,13 +123,13 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
         <span className="block text-sm font-semibold text-slate-800">
           Password
         </span>
-        <span className="mt-1.5 flex min-h-[42px] items-center gap-5 rounded-lg border border-[#E8EEF7] px-4 py-2 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
+        <span className="mt-1.5 flex h-12 items-center gap-4 rounded-lg border border-[#E8EEF7] bg-white px-4 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
           <LockIcon />
           <Input
             type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
             {...register("password")}
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-slate-950 shadow-none outline-none placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
+            className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-base leading-none text-slate-950 caret-[#007AFF] shadow-none outline-none selection:bg-blue-100 placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
           />
           <Button
             type="button"
@@ -168,11 +172,16 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
         disabled={isLoading}
         className="h-12 min-h-12 w-full appearance-none rounded-lg bg-[#007AFF] px-5 text-base font-semibold leading-none text-white shadow-lg shadow-[#312ECB]/10 hover:bg-[#006be0] disabled:cursor-not-allowed disabled:bg-slate-400"
       >
-        {isLoading
-          ? "Working..."
-          : mode === "sign-in"
-            ? "Sign In"
-            : "Create account"}
+        {isLoading ? (
+          <>
+            <Loader2 className="size-4 animate-spin text-white" />
+            {mode === "sign-in" ? "Signing in" : "Creating account"}
+          </>
+        ) : mode === "sign-in" ? (
+          "Sign In"
+        ) : (
+          "Create account"
+        )}
       </Button>
 
       <div className="flex items-center gap-5 text-slate-400">

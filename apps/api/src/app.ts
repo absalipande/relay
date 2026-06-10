@@ -2,10 +2,24 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import Fastify from "fastify";
 import { loadConfig, type AppConfig } from "./config/env.js";
-import { createSupabaseAdminClient } from "./lib/supabase.js";
+import {
+  createSupabaseAdminClient,
+  createSupabaseUserClient,
+} from "./lib/supabase.js";
+import { authPlugin } from "./plugins/auth.js";
 import { healthRoutes } from "./routes/health.js";
+import { workspaceRoutes } from "./routes/workspaces.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export async function buildApp(config: AppConfig = loadConfig()) {
+type BuildAppDependencies = {
+  supabase?: SupabaseClient | null;
+  createSupabaseForUser?: (accessToken: string) => SupabaseClient | null;
+};
+
+export async function buildApp(
+  config: AppConfig = loadConfig(),
+  dependencies: BuildAppDependencies = {},
+) {
   const app = Fastify({
     logger: config.NODE_ENV !== "test",
   });
@@ -17,9 +31,20 @@ export async function buildApp(config: AppConfig = loadConfig()) {
   });
 
   app.decorate("config", config);
-  app.decorate("supabase", createSupabaseAdminClient(config));
+  app.decorate(
+    "supabase",
+    dependencies.supabase ?? createSupabaseAdminClient(config),
+  );
+  app.decorate(
+    "createSupabaseForUser",
+    dependencies.createSupabaseForUser ??
+      ((accessToken: string) => createSupabaseUserClient(config, accessToken)),
+  );
+  app.decorateRequest("user", null);
 
+  await authPlugin(app);
   await app.register(healthRoutes);
+  await app.register(workspaceRoutes);
 
   return app;
 }

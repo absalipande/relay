@@ -15,3 +15,24 @@ export function createSupabaseAdminClient(
     },
   });
 }
+
+export function createSupabaseUserClient(
+  config: AppConfig,
+  accessToken: string,
+): SupabaseClient | null {
+  if (!config.SUPABASE_URL || !config.SUPABASE_PUBLISHABLE_KEY) {
+    return null;
+  }
+
+  return createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+}

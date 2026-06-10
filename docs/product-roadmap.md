@@ -6,6 +6,12 @@ This roadmap tracks product features beyond the backend implementation checklist
 
 The product name is Relay. Any older planning references to Worklane should be read as Relay.
 
+## Product Direction
+
+Relay should feel like the useful center of Jira and ClickUp: structured enough for serious project tracking, flexible enough for small teams, and calmer than both. The differentiator is a persistent contextual right panel that starts as an inspector for selected projects/tasks and later becomes an AI assistant that can summarize, draft, and extract next actions from workspace context.
+
+The detailed product and visual direction is tracked in [docs/product-direction.md](docs/product-direction.md).
+
 ## MVP Core
 
 - [x] Supabase project created and connected locally
@@ -25,6 +31,7 @@ The product name is Relay. Any older planning references to Worklane should be r
 - [ ] Activity logs
 - [ ] Kanban board
 - [ ] Task table view
+- [x] Contained workspace shell with sidebar, navbar, main canvas, and dynamic right context panel scaffold
 - [ ] Basic workspace/project settings
 
 ## Version 1 Polish

@@ -52,7 +52,34 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+.app-content-scrollbar {
+  scrollbar-color: color-mix(in oklab, #71717a 42%, transparent) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.app-content-scrollbar::-webkit-scrollbar {
+  width: 0.45rem;
+}
+
+.app-content-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-content-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, #71717a 28%, transparent);
+  border: 0.16rem solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+.app-content-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, #52525b 40%, transparent);
+  background-clip: content-box;
+}
+
 :root {
+  --relay-app-height: 100dvh;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

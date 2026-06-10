@@ -17,6 +17,8 @@ Relay is moving to a TypeScript/Supabase stack.
 - Data fetching: TanStack Query or server actions, depending on screen needs
 - Testing: Vitest for shared/API unit tests, Playwright for frontend flows
 
+Product and visual direction is tracked in [docs/product-direction.md](product-direction.md).
+
 ## Monorepo Layout
 
 ```txt
@@ -109,6 +111,11 @@ UI component strategy:
 - Use shadcn/ui for shared primitives under `components/ui`.
 - Current shadcn setup uses `components.json` with the `radix-nova` style and Lucide icon library.
 - Use `cn` from `lib/utils.ts` for conditional class merging.
+- Use Relay blue `#007AFF` as the primary action/icon color and `#312ECB` only as secondary emphasis.
+- Use a white-first app surface with zinc/neutral hover, active, border, and selected states.
+- Prefer the Veyra-inspired app shell rhythm: fixed app height, wide max width, compact typography, internal content scrolling, and a white-first surface.
+- Use the Jira mock as the sidebar/navbar structure reference: logo row with collapse affordance, workspace card, grouped nav, quick-create card, account dropdown, breadcrumb, search, and notification badge.
+- The right context panel is dynamic. Do not render an empty persistent AI panel by default; render details/AI tabs only after the user selects contextual data.
 - Feature pages, including auth, should use shadcn primitives such as `Button`, `Input`, `Label`, and `Tabs` instead of raw native controls when an appropriate primitive exists.
 - Keep feature-specific composed UI inside each `features/*/components` folder.
 - Add shadcn components on demand instead of preloading a large component set.
@@ -177,7 +184,8 @@ Rules for introducing Go:
 - [ ] Implement projects
 - [ ] Implement tasks
 - [ ] Implement comments and activity logs
-- [ ] Build dashboard, project board, task table, and settings screens
+- [x] Build contained workspace shell with sidebar, navbar, and dynamic right context panel scaffold
+- [ ] Build project board, task table, full context panel details, and settings screens
 - [ ] Add focused Go microservice only after a clear async/backend-heavy need emerges
 
 ## AI Assistant Plan
@@ -201,7 +209,7 @@ The TypeScript scaffold is in place:
 - Local untracked API/web env files are configured with the Supabase URL, publishable key, service role key, and database URL.
 - The initial workspace/member migration has been applied to the remote Supabase database with `psql`.
 - Remote verification confirmed the workspace/member tables have nine RLS policies.
-- `apps/web` has a feature-based frontend structure, Supabase browser/server clients, session refresh proxy, Relay logo assets, and a polished split-screen sign-in/sign-up page.
+- `apps/web` has a feature-based frontend structure, Supabase browser/server clients, session refresh proxy, Relay logo assets, a polished split-screen sign-in/sign-up page, and a Veyra/Jira-inspired app shell under `/app`.
 
 The next planned implementation step is to create the first signed-in workspace flow, then baseline Supabase CLI migration history before future migration pushes.
 
