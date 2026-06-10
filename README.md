@@ -44,7 +44,32 @@ relay/
 
 ## Run locally
 
-The new TypeScript stack has not been scaffolded yet. Once it is, local setup will use Node.js package scripts plus Supabase local/dev configuration.
+The TypeScript stack is scaffolded, but the product flows are still early.
+
+Frontend:
+
+```sh
+cd apps/web
+npm run dev
+```
+
+API:
+
+```sh
+cd apps/api
+cp .env.example .env
+npm run dev
+```
+
+Useful API checks:
+
+```sh
+cd apps/api
+npm test
+npm run build
+```
+
+Supabase migrations have started under `supabase/migrations`, but local Supabase wiring is still a later setup step.
 
 ## Progress
 

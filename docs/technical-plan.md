@@ -89,11 +89,11 @@ Rules for introducing Go:
 
 ## MVP Build Order
 
-- [ ] Scaffold monorepo folders
-- [ ] Scaffold Next.js app in `apps/web`
-- [ ] Scaffold Fastify API in `apps/api`
-- [ ] Add shared TypeScript package in `packages/shared`
-- [ ] Add Supabase project config and migrations
+- [x] Scaffold monorepo folders
+- [x] Scaffold Next.js app in `apps/web`
+- [x] Scaffold Fastify API in `apps/api`
+- [x] Add shared TypeScript package in `packages/shared`
+- [x] Add Supabase project config and migrations
 - [ ] Implement auth UI with Supabase Auth
 - [ ] Implement workspace tables and RLS/policies
 - [ ] Implement Fastify workspace routes
@@ -112,6 +112,17 @@ Relay should keep the AI assistant panel from the product roadmap. In the TypeSc
 - Supabase stores conversations, messages, context links, and saved outputs.
 - Permission checks must happen before any workspace/project/task data is used as context.
 
+## Current Status
+
+The TypeScript scaffold is in place:
+
+- `apps/web` has the Next.js app.
+- `apps/api` has the Fastify API skeleton, health route, env validation, Supabase admin client boundary, and Vitest coverage.
+- `packages/shared` has the initial shared TypeScript package.
+- `supabase/migrations` has the first workspace/member migration.
+
+The next planned implementation step is to wire Supabase locally and build the first auth/workspace flow.
+
 ## Migration Note
 
-The existing Go code has been moved to `archive/go-backend` and should not be extended as the main API. Go may return later as fresh, focused microservices under `services/`. The next implementation step is to scaffold the TypeScript monorepo structure.
+The existing Go code has been moved to `archive/go-backend` and should not be extended as the main API. Go may return later as fresh, focused microservices under `services/`.
