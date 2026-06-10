@@ -8,7 +8,14 @@ The product name is Relay. Any older planning references to Worklane should be r
 
 ## MVP Core
 
-- [ ] Authentication with Supabase Auth
+- [x] Supabase project created and connected locally
+- [x] Initial workspace/member database migration applied
+- [x] Initial workspace/member RLS policies applied
+- [x] Basic authentication with Supabase Auth
+- [x] Polished sign-in/sign-up page
+- [x] Frontend server-state/form stack selected
+- [x] shadcn/ui initialized for reusable UI primitives
+- [ ] Google OAuth login
 - [ ] Workspaces and workspace members
 - [ ] Workspace roles and permissions
 - [ ] Projects inside workspaces
@@ -77,7 +84,7 @@ This should come after the task/comment/activity-log core exists. The first prac
 
 ## Later Advanced Features
 
-- [ ] OAuth/social login
+- [ ] Additional OAuth/social login beyond Google
 - [ ] Custom roles
 - [ ] Custom workflows
 - [ ] Sprints

@@ -44,7 +44,8 @@ relay/
 
 ## Run locally
 
-The TypeScript stack is scaffolded, but the product flows are still early.
+The TypeScript stack is scaffolded, Supabase is connected, and the first auth
+screen is in place. Product flows are still early.
 
 Frontend:
 
@@ -57,9 +58,66 @@ API:
 
 ```sh
 cd apps/api
-cp .env.example .env
 npm run dev
 ```
+
+Environment files are intentionally untracked. Configure local `.env` files from
+your Supabase dashboard values instead of committing examples.
+
+Supabase:
+
+```sh
+supabase login
+supabase link --project-ref ohpfhplapyplckemchul
+```
+
+The Supabase project is linked in `supabase/config.toml`. Local API and web env
+files are configured on this machine but are intentionally ignored by git.
+
+Current frontend structure:
+
+```txt
+apps/web/
+  app/
+    (public)/
+      page.tsx
+    icon.svg
+    layout.tsx
+  components/
+    ui/
+      button.tsx
+  features/
+    auth/
+      components/
+        auth-form.tsx
+        auth-hero.tsx
+    workspaces/
+      components/
+        workspace-empty-state.tsx
+  lib/
+    query/
+      query-provider.tsx
+    supabase/
+      client.ts
+      server.ts
+    utils.ts
+  proxy.ts
+```
+
+`app/` owns routes and layouts, `features/` owns product-domain UI, and `lib/`
+owns framework/infrastructure adapters such as Supabase clients. Shared UI
+primitives live in `components/ui` and are generated through shadcn/ui.
+
+Frontend state and forms:
+
+- TanStack Query owns server state, caching, and invalidation.
+- React Hook Form owns form state.
+- Zod owns client-side validation schemas.
+- shadcn/ui owns reusable UI primitives, using the Radix Nova preset and Lucide icons.
+- App and feature pages should prefer shadcn primitives from `components/ui`
+  instead of raw native controls when a matching component exists.
+- Local React state is reserved for small UI state such as password visibility.
+- Zustand is intentionally deferred until shared client-only UI state appears.
 
 Useful API checks:
 
@@ -69,7 +127,14 @@ npm test
 npm run build
 ```
 
-Supabase migrations have started under `supabase/migrations`, but local Supabase wiring is still a later setup step.
+Supabase migrations live under `supabase/migrations`. The first workspace/member
+migration has been applied directly to the linked Supabase project and verified.
+Because it was applied with `psql`, the Supabase CLI migration history still
+needs to be baselined before using future `supabase db push` workflows.
+
+The current auth page uses Supabase email/password sign-in and sign-up. Google
+OAuth is shown as the intended social provider, but OAuth provider setup is not
+wired yet.
 
 ## Progress
 

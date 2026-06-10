@@ -11,7 +11,7 @@ Relay is moving to a TypeScript/Supabase stack.
 - Storage: Supabase Storage later
 - Realtime: Supabase Realtime later
 - Future services: Go microservices when there is a clear backend-heavy use case
-- UI: Shadcn UI and TailwindCSS
+- UI: shadcn/ui, Radix primitives, Lucide icons, and TailwindCSS
 - Validation: Zod
 - Forms: React Hook Form
 - Data fetching: TanStack Query or server actions, depending on screen needs
@@ -45,6 +45,73 @@ relay/
 - Form validation UX
 - Client-side data fetching/caching
 - AI assistant side panel UI
+
+Frontend code should use a feature-based structure:
+
+- `app/` owns routes, route groups, layouts, loading states, and errors.
+- `features/` owns product-domain UI and behavior such as auth, workspaces, projects, tasks, comments, and assistant.
+- `components/` is reserved for shared UI primitives and cross-feature layout pieces.
+- `lib/` owns infrastructure and framework adapters such as Supabase clients and env helpers.
+- `hooks/` is reserved for generic hooks that are not tied to one feature.
+
+Current frontend folders:
+
+```txt
+apps/web/
+  app/
+    (public)/
+      page.tsx
+    icon.svg
+    layout.tsx
+  components/
+    ui/
+      button.tsx
+  features/
+    auth/
+      components/
+        auth-form.tsx
+        auth-hero.tsx
+    workspaces/
+      components/
+        workspace-empty-state.tsx
+  lib/
+    query/
+      query-provider.tsx
+    supabase/
+      client.ts
+      server.ts
+    utils.ts
+  proxy.ts
+```
+
+Current auth UI:
+
+- Split-screen sign-in/sign-up page under `app/(public)/page.tsx`.
+- Left side uses a Relay-branded product-board illustration.
+- Right side uses a compact white-background auth form.
+- Email/password auth is wired to Supabase Auth.
+- Auth form state uses React Hook Form with Zod validation.
+- Google is the intended social provider, but OAuth setup is not wired yet.
+- GitHub social login is intentionally omitted for MVP unless developer/team integrations become a near-term requirement.
+
+Frontend state/data strategy:
+
+- Use TanStack Query for server state, query caching, mutations, retries, optimistic updates, and invalidation.
+- Organize query keys by feature domain, for example `features/workspaces/api/keys.ts`.
+- Use React Hook Form for form state and Zod schemas for validation.
+- Use URL search params for shareable view state such as filters and table views.
+- Use local React state for small component-local UI toggles.
+- Add Zustand only if shared client-only UI state emerges, such as command palette, selected task drawer, or persisted sidebar state.
+- Do not add tRPC yet. Keep the frontend/backend contract as Fastify HTTP routes validated with Zod, sharing schemas through `packages/shared` when useful.
+
+UI component strategy:
+
+- Use shadcn/ui for shared primitives under `components/ui`.
+- Current shadcn setup uses `components.json` with the `radix-nova` style and Lucide icon library.
+- Use `cn` from `lib/utils.ts` for conditional class merging.
+- Feature pages, including auth, should use shadcn primitives such as `Button`, `Input`, `Label`, and `Tabs` instead of raw native controls when an appropriate primitive exists.
+- Keep feature-specific composed UI inside each `features/*/components` folder.
+- Add shadcn components on demand instead of preloading a large component set.
 
 ### Fastify API
 
@@ -94,8 +161,18 @@ Rules for introducing Go:
 - [x] Scaffold Fastify API in `apps/api`
 - [x] Add shared TypeScript package in `packages/shared`
 - [x] Add Supabase project config and migrations
-- [ ] Implement auth UI with Supabase Auth
-- [ ] Implement workspace tables and RLS/policies
+- [x] Link Supabase project and configure local API/web env files
+- [x] Apply initial Supabase migration to the linked project
+- [x] Add initial workspace/member RLS policies
+- [ ] Baseline Supabase CLI migration history before future `db push`
+- [x] Install Supabase web packages and client/server helpers
+- [x] Implement basic auth UI with Supabase Auth
+- [x] Add Relay logo, tab icon, and polished split-screen auth page
+- [x] Add TanStack Query provider
+- [x] Add React Hook Form and Zod validation pattern
+- [x] Install and initialize shadcn/ui
+- [ ] Wire Google OAuth provider in Supabase
+- [ ] Implement workspace tables and membership flows
 - [ ] Implement Fastify workspace routes
 - [ ] Implement projects
 - [ ] Implement tasks
@@ -120,8 +197,13 @@ The TypeScript scaffold is in place:
 - `apps/api` has the Fastify API skeleton, health route, env validation, Supabase admin client boundary, and Vitest coverage.
 - `packages/shared` has the initial shared TypeScript package.
 - `supabase/migrations` has the first workspace/member migration.
+- `supabase/config.toml` links the remote Supabase project.
+- Local untracked API/web env files are configured with the Supabase URL, publishable key, service role key, and database URL.
+- The initial workspace/member migration has been applied to the remote Supabase database with `psql`.
+- Remote verification confirmed the workspace/member tables have nine RLS policies.
+- `apps/web` has a feature-based frontend structure, Supabase browser/server clients, session refresh proxy, Relay logo assets, and a polished split-screen sign-in/sign-up page.
 
-The next planned implementation step is to wire Supabase locally and build the first auth/workspace flow.
+The next planned implementation step is to create the first signed-in workspace flow, then baseline Supabase CLI migration history before future migration pushes.
 
 ## Migration Note
 
