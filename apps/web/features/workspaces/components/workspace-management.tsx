@@ -137,6 +137,8 @@ export function WorkspaceManagement({
         : leftCreatedAt - rightCreatedAt;
     });
   }, [query, sortMode, workspaces]);
+  const hasWorkspaces = workspaces.length > 0;
+  const isFirstWorkspace = !hasWorkspaces && !error;
 
   function selectWorkspace(workspaceId: string) {
     setOpenedAtByWorkspaceId((current) => ({
@@ -190,24 +192,28 @@ export function WorkspaceManagement({
               Workspaces
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[#64748B]">
-              Switch between the spaces you own, or create a new one for a team
-              or project.
+              {isFirstWorkspace
+                ? "Create your first workspace to start organizing projects, tasks, files, and members."
+                : "Switch between the spaces you own, or create a new one for a team or project."}
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={openCreatePanel}
-            className="h-10 rounded-[0.8rem] bg-[#007AFF] px-4 text-white hover:bg-[#006be0]"
-          >
-            <Plus className="size-4" />
-            New workspace
-          </Button>
+          {hasWorkspaces ? (
+            <Button
+              type="button"
+              onClick={openCreatePanel}
+              className="h-10 rounded-[0.8rem] bg-[#007AFF] px-4 text-white hover:bg-[#006be0]"
+            >
+              <Plus className="size-4" />
+              New workspace
+            </Button>
+          ) : null}
           </div>
         </div>
 
         <div className="mt-12">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <Label className="relative block w-[320px] max-w-full">
+          {hasWorkspaces ? (
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Label className="relative block w-[320px] max-w-full">
                 <span className="sr-only">Search workspaces</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#94A3B8]" />
                 <Input
@@ -216,66 +222,67 @@ export function WorkspaceManagement({
                   placeholder="Search workspaces..."
                   className="h-11 rounded-[0.8rem] border-[#E4E4E7] bg-white pl-9 shadow-none focus-visible:border-[#007AFF]/45 focus-visible:ring-2 focus-visible:ring-[#007AFF]/12"
                 />
-            </Label>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex h-11 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setSortMode("newest")}
-                  className={`h-9 rounded-[0.6rem] px-4 text-sm font-semibold ${
-                    sortMode === "newest"
-                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
-                      : "text-[#64748B] hover:bg-[#F8FAFC]"
-                  }`}
-                >
-                  Newest
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setSortMode("oldest")}
-                  className={`h-9 rounded-[0.6rem] px-4 text-sm font-semibold ${
-                    sortMode === "oldest"
-                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
-                      : "text-[#64748B] hover:bg-[#F8FAFC]"
-                  }`}
-                >
-                  Oldest
-                </Button>
-              </div>
-              <div className="flex h-11 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setViewMode("grid")}
-                  className={`size-9 rounded-[0.6rem] ${
-                    viewMode === "grid"
-                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
-                      : "text-[#64748B] hover:bg-[#F8FAFC]"
-                  }`}
-                  aria-label="Grid view"
-                >
-                  <Grid2X2 className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setViewMode("list")}
-                  className={`size-9 rounded-[0.6rem] ${
-                    viewMode === "list"
-                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
-                      : "text-[#64748B] hover:bg-[#F8FAFC]"
-                  }`}
-                  aria-label="List view"
-                >
-                  <List className="size-4" />
-                </Button>
+              </Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex h-11 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setSortMode("newest")}
+                    className={`h-9 rounded-[0.6rem] px-4 text-sm font-semibold ${
+                      sortMode === "newest"
+                        ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                        : "text-[#64748B] hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    Newest
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setSortMode("oldest")}
+                    className={`h-9 rounded-[0.6rem] px-4 text-sm font-semibold ${
+                      sortMode === "oldest"
+                        ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                        : "text-[#64748B] hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    Oldest
+                  </Button>
+                </div>
+                <div className="flex h-11 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setViewMode("grid")}
+                    className={`size-9 rounded-[0.6rem] ${
+                      viewMode === "grid"
+                        ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                        : "text-[#64748B] hover:bg-[#F8FAFC]"
+                    }`}
+                    aria-label="Grid view"
+                  >
+                    <Grid2X2 className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setViewMode("list")}
+                    className={`size-9 rounded-[0.6rem] ${
+                      viewMode === "list"
+                        ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                        : "text-[#64748B] hover:bg-[#F8FAFC]"
+                    }`}
+                    aria-label="List view"
+                  >
+                    <List className="size-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          ) : null}
 
           {error ? (
             <p className="mt-4 rounded-[0.8rem] bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -283,37 +290,54 @@ export function WorkspaceManagement({
             </p>
           ) : null}
 
-          <div className="app-content-scrollbar mt-6 h-[720px] max-h-[720px] overflow-y-auto overflow-x-hidden pr-2">
+          <div className={`app-content-scrollbar mt-6 overflow-y-auto overflow-x-hidden pr-2 ${
+            hasWorkspaces ? "h-[720px] max-h-[720px]" : "min-h-[420px]"
+          }`}>
             <div
               className={`grid gap-4 ${
-                viewMode === "grid"
-                  ? "md:grid-cols-2 2xl:grid-cols-3"
-                  : "grid-cols-1"
+                !hasWorkspaces
+                  ? "min-h-[420px] place-items-center"
+                  : viewMode === "grid"
+                    ? "md:grid-cols-2 2xl:grid-cols-3"
+                    : "grid-cols-1"
               }`}
             >
               {filteredWorkspaces.length > 0 ? (
                 filteredWorkspaces.map((workspace) => (
-                <WorkspaceCard
-                  key={workspace.id}
-                  onSelect={() => selectWorkspace(workspace.id)}
-                  selected={workspace.id === selectedWorkspace?.id}
-                  workspace={workspace}
-                  viewMode={viewMode}
-                />
+                  <WorkspaceCard
+                    key={workspace.id}
+                    onSelect={() => selectWorkspace(workspace.id)}
+                    selected={workspace.id === selectedWorkspace?.id}
+                    workspace={workspace}
+                    viewMode={viewMode}
+                  />
                 ))
-              ) : (
-                <div className="rounded-[0.95rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5">
-                  <Plus className="size-5 text-[#94A3B8]" />
-                  <h3 className="mt-4 text-sm font-semibold">
-                    {workspaces.length === 0
-                      ? "No workspaces yet"
-                      : "No matching workspaces"}
+              ) : workspaces.length === 0 ? (
+                <div className="col-span-full mx-auto grid max-w-[360px] place-items-center text-center">
+                  <span className="grid size-14 place-items-center rounded-[1rem] bg-[#EFF6FF] text-[#007AFF] ring-1 ring-[#DBEAFE]">
+                    <FolderPlus className="size-6" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#030712]">
+                    No workspaces yet
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#64748B]">
-                    {workspaces.length === 0
-                      ? "Use the new workspace button to create your first workspace."
-                      : "Try another name or URL."}
+                    Use the form on the right to create your first workspace for
+                    a team, client, department, or personal project.
                   </p>
+                </div>
+              ) : (
+                <div className="grid min-h-[260px] place-items-center rounded-[1.15rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-6 py-10 text-center">
+                  <div className="max-w-[360px]">
+                    <span className="mx-auto grid size-14 place-items-center rounded-[1rem] bg-white text-[#007AFF] shadow-[0_18px_54px_-42px_rgba(15,23,42,0.5)] ring-1 ring-[#DBEAFE]">
+                      <FolderPlus className="size-7" />
+                    </span>
+                    <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#030712]">
+                      No matching workspaces
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-[#64748B]">
+                      Try another name or URL.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -327,7 +351,7 @@ export function WorkspaceManagement({
       </section>
 
       <section className="sticky top-6 min-h-[360px]">
-        <div className="bg-white p-6">
+        <div className="rounded-[1rem] bg-white p-6">
           {selectedWorkspace ? (
             <WorkspaceInspector
               currentUser={currentUser}
@@ -336,25 +360,33 @@ export function WorkspaceManagement({
               onModeChange={changePanelMode}
               workspace={selectedWorkspace}
             />
-          ) : panelIntent === "create" ? (
+          ) : panelIntent === "create" || isFirstWorkspace ? (
             <>
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold">Create workspace</h2>
+                  <h2 className="text-lg font-semibold">
+                    {isFirstWorkspace
+                      ? "Create your first workspace"
+                      : "Create workspace"}
+                  </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Choose a name and URL. You will start as the workspace owner.
+                    {isFirstWorkspace
+                      ? "Create a space for your team, client, department, or personal project."
+                      : "Choose a name and URL. You will start as the workspace owner."}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={closePanel}
-                  className="size-8 rounded-[0.7rem] text-[#71717A]"
-                  aria-label="Close create workspace panel"
-                >
-                  <X className="size-4" />
-                </Button>
+                {isFirstWorkspace ? null : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={closePanel}
+                    className="size-8 rounded-[0.7rem] text-[#71717A]"
+                    aria-label="Close create workspace panel"
+                  >
+                    <X className="size-4" />
+                  </Button>
+                )}
               </div>
               <WorkspaceCreateForm compact redirectTo="/app/workspaces/new" />
             </>

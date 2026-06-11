@@ -81,6 +81,13 @@ apps/web/
   app/
     (public)/
       page.tsx
+      verify-email/
+        page.tsx
+    app/
+      page.tsx
+      workspaces/
+        new/
+          page.tsx
     icon.svg
     layout.tsx
   components/
@@ -132,9 +139,13 @@ migration has been applied directly to the linked Supabase project and verified.
 Because it was applied with `psql`, the Supabase CLI migration history still
 needs to be baselined before using future `supabase db push` workflows.
 
-The current auth page uses Supabase email/password sign-in and sign-up. Google
-OAuth is shown as the intended social provider, but OAuth provider setup is not
-wired yet.
+The current auth page uses Supabase email/password sign-in and sign-up. New
+sign-ups are sent to `/verify-email` with the submitted email in the query
+string while Supabase sends the confirmation email. After the user confirms
+their email, Supabase redirects them back to the public sign-in page. Once a
+signed-in user reaches `/app`, users without any workspaces are redirected to
+`/app/workspaces/new` to create their first workspace. Google OAuth is shown as
+the intended social provider, but OAuth provider setup is not wired yet.
 
 ## Progress
 

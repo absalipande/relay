@@ -52,6 +52,7 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
     setMessage(null);
 
     const fullName = values.fullName?.trim();
+    const email = values.email.trim();
 
     if (mode === "sign-up" && (!fullName || fullName.length < 2)) {
       setIsLoading(false);
@@ -65,13 +66,14 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
     const authCall =
       mode === "sign-in"
         ? supabase.auth.signInWithPassword({
-            email: values.email,
+            email,
             password: values.password,
           })
         : supabase.auth.signUp({
-            email: values.email,
+            email,
             password: values.password,
             options: {
+              emailRedirectTo: `${window.location.origin}/`,
               data: {
                 full_name: fullName,
               },
@@ -87,15 +89,13 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
       return;
     }
 
-    setMessage(
-      mode === "sign-up"
-        ? "Account created. Check your email if confirmation is enabled, then sign in."
-        : "Signed in. Opening your workspace.",
-    );
-
     if (mode === "sign-in") {
+      setMessage("Signed in. Opening your workspace.");
       router.push("/app");
       router.refresh();
+    } else {
+      const params = new URLSearchParams({ email });
+      router.push(`/verify-email?${params.toString()}`);
     }
   }
 

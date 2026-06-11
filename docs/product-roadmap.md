@@ -19,10 +19,12 @@ The detailed product and visual direction is tracked in [docs/product-direction.
 - [x] Initial workspace/member RLS policies applied
 - [x] Basic authentication with Supabase Auth
 - [x] Polished sign-in/sign-up page
+- [x] Email verification holding page after sign-up
 - [x] Frontend server-state/form stack selected
 - [x] shadcn/ui initialized for reusable UI primitives
 - [ ] Google OAuth login
-- [ ] Workspaces and workspace members
+- [x] First-workspace setup route for new accounts
+- [x] Workspaces and workspace members
 - [ ] Workspace roles and permissions
 - [ ] Projects inside workspaces
 - [ ] Project members and project roles

@@ -89,9 +89,14 @@ apps/web/
 Current auth UI:
 
 - Split-screen sign-in/sign-up page under `app/(public)/page.tsx`.
+- Email verification holding page under `app/(public)/verify-email/page.tsx`.
 - Left side uses a Relay-branded product-board illustration.
 - Right side uses a compact white-background auth form.
 - Email/password auth is wired to Supabase Auth.
+- Sign-up passes `emailRedirectTo` back to the public sign-in page, then routes
+  the user to `/verify-email?email=...` using the real submitted email.
+- After email confirmation, Supabase returns the user to sign in. The app does
+  not auto-enter `/app` from the verification page.
 - Auth form state uses React Hook Form with Zod validation.
 - Google is the intended social provider, but OAuth setup is not wired yet.
 - GitHub social login is intentionally omitted for MVP unless developer/team integrations become a near-term requirement.
@@ -174,13 +179,15 @@ Rules for introducing Go:
 - [ ] Baseline Supabase CLI migration history before future `db push`
 - [x] Install Supabase web packages and client/server helpers
 - [x] Implement basic auth UI with Supabase Auth
+- [x] Add email verification holding page after sign-up
 - [x] Add Relay logo, tab icon, and polished split-screen auth page
 - [x] Add TanStack Query provider
 - [x] Add React Hook Form and Zod validation pattern
 - [x] Install and initialize shadcn/ui
 - [ ] Wire Google OAuth provider in Supabase
-- [ ] Implement workspace tables and membership flows
-- [ ] Implement Fastify workspace routes
+- [x] Implement workspace tables and membership flows
+- [x] Implement Fastify workspace routes
+- [x] Redirect signed-in users with no workspaces to `/app/workspaces/new`
 - [ ] Implement projects
 - [ ] Implement tasks
 - [ ] Implement comments and activity logs
@@ -209,9 +216,10 @@ The TypeScript scaffold is in place:
 - Local untracked API/web env files are configured with the Supabase URL, publishable key, service role key, and database URL.
 - The initial workspace/member migration has been applied to the remote Supabase database with `psql`.
 - Remote verification confirmed the workspace/member tables have nine RLS policies.
-- `apps/web` has a feature-based frontend structure, Supabase browser/server clients, session refresh proxy, Relay logo assets, a polished split-screen sign-in/sign-up page, and a Veyra/Jira-inspired app shell under `/app`.
+- `apps/web` has a feature-based frontend structure, Supabase browser/server clients, session refresh proxy, Relay logo assets, a polished split-screen sign-in/sign-up page, an email verification holding page, a first-workspace setup route at `/app/workspaces/new`, and a Veyra/Jira-inspired app shell under `/app`.
 
-The next planned implementation step is to create the first signed-in workspace flow, then baseline Supabase CLI migration history before future migration pushes.
+The next planned implementation step is to continue workspace management polish
+and then baseline Supabase CLI migration history before future migration pushes.
 
 ## Migration Note
 

@@ -28,6 +28,11 @@ export default async function AppHome({ searchParams }: AppHomeProps) {
   );
 
   const workspaces = data?.workspaces ?? [];
+
+  if (!error && workspaces.length === 0) {
+    redirect("/app/workspaces/new");
+  }
+
   const selectedWorkspace = workspaces.find(
     (workspace) => workspace.id === params.workspace,
   );
@@ -37,6 +42,7 @@ export default async function AppHome({ searchParams }: AppHomeProps) {
   return (
     <RelayAppShell
       email={user.email ?? "Unknown user"}
+      activeNav="overview"
       hasWorkspace={workspaces.length > 0}
       workspaceName={activeWorkspace?.name}
       context={

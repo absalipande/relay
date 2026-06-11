@@ -166,5 +166,8 @@ The current `/app` shell uses:
 - Veyra-inspired app sizing: fixed app height, wide max width, compact typography, and a thin internal scrollbar.
 - Jira-inspired sidebar structure: logo row with collapse affordance, workspace card, grouped nav, quick-create card, and user account card.
 - Navbar pattern from the Jira mock: desktop breadcrumb on the left, search on the right, a subtle divider, and a notification icon with badge.
+- Sidebar active state is page-driven. Overview is highlighted only on the
+  actual `/app` overview page, not on setup routes such as
+  `/app/workspaces/new`.
 - Account behavior: the sidebar account chevron opens a dropdown; sign out must not happen from a single accidental chevron click.
 - Dynamic context: the right panel appears only when something is selected. The first scaffold uses workspace URL params and a Details/AI tab.

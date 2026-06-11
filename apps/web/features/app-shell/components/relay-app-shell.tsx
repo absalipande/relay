@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { signOut } from "@/features/workspaces/actions";
 
 type RelayAppShellProps = {
+  activeNav?: NavKey;
   children: React.ReactNode;
   context?: React.ReactNode;
   email: string;
@@ -38,8 +39,19 @@ type RelayAppShellProps = {
   workspaceName?: string;
 };
 
-const primaryNav = [
-  { label: "Overview", href: "/app", icon: Home, active: true },
+type NavKey = "overview";
+
+type NavItemConfig = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  navKey?: NavKey;
+  active?: boolean;
+  disabled?: boolean;
+};
+
+const primaryNav: NavItemConfig[] = [
+  { label: "Overview", href: "/app", icon: Home, navKey: "overview" },
   { label: "Projects", href: "/app", icon: FolderKanban },
   { label: "Tasks", href: "/app", icon: ListTodo },
   { label: "Calendar", href: "/app", icon: CalendarDays },
@@ -47,7 +59,7 @@ const primaryNav = [
   { label: "Reports", href: "/app", icon: GanttChartSquare },
 ];
 
-const secondaryNav = [
+const secondaryNav: NavItemConfig[] = [
   { label: "Team", href: "/app", icon: Users },
   { label: "Clients", href: "/app", icon: Building2 },
   { label: "Files", href: "/app", icon: FileText },
@@ -55,6 +67,7 @@ const secondaryNav = [
 ];
 
 export function RelayAppShell({
+  activeNav,
   children,
   context,
   email,
@@ -64,10 +77,10 @@ export function RelayAppShell({
   const hasContext = Boolean(context);
   const displayedWorkspaceName = hasWorkspace
     ? (workspaceName ?? "Workspace")
-    : "Setup";
+    : "No workspace selected";
   const workspaceInitials = hasWorkspace
     ? displayedWorkspaceName.slice(0, 2).toUpperCase()
-    : "SE";
+    : "--";
 
   return (
     <main className="h-[var(--relay-app-height)] overflow-hidden bg-white text-[#111111]">
@@ -116,7 +129,7 @@ export function RelayAppShell({
                     {displayedWorkspaceName}
                   </span>
                   <span className="block text-[0.76rem] leading-4 text-[#71717A]">
-                    {hasWorkspace ? "Workspace" : "No workspace yet"}
+                    {hasWorkspace ? "Workspace" : "Create a workspace to begin"}
                   </span>
                 </span>
               </span>
@@ -137,7 +150,12 @@ export function RelayAppShell({
             <NavGroup
               label="Overview"
               items={primaryNav.map((item) =>
-                item.label === "Overview" ? item : { ...item, disabled: !hasWorkspace },
+                item.label === "Overview"
+                  ? {
+                      ...item,
+                      active: item.navKey === activeNav,
+                    }
+                  : { ...item, disabled: !hasWorkspace },
               )}
             />
             <NavGroup
@@ -317,14 +335,6 @@ export function RelayAppShell({
   );
 }
 
-type NavItemConfig = {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  active?: boolean;
-  disabled?: boolean;
-};
-
 function NavGroup({
   label,
   items,
@@ -357,7 +367,10 @@ function NavItem({
 }: NavItemConfig) {
   if (disabled) {
     return (
-      <span className="flex cursor-not-allowed items-center gap-3 rounded-[0.95rem] px-3 py-2 text-[0.9rem] font-medium text-[#A1A1AA]">
+      <span
+        className="flex cursor-not-allowed items-center gap-3 rounded-[0.95rem] px-3 py-2 text-[0.9rem] font-medium text-[#A1A1AA]"
+        title="Create a workspace first"
+      >
         <span className="flex size-8 items-center justify-center rounded-[0.75rem] text-[#A1A1AA]">
           <Icon className="size-[1.02rem] stroke-[1.9]" />
         </span>
