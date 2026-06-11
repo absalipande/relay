@@ -1,5 +1,10 @@
 import { WorkspaceList } from "@/features/workspaces/components/workspace-list";
-import { apiFetch, type ApiWorkspace } from "@/lib/api/server";
+import {
+  apiFetch,
+  type ApiProject,
+  type ApiTask,
+  type ApiWorkspace,
+} from "@/lib/api/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -35,6 +40,16 @@ export default async function AppHome({ searchParams }: AppHomeProps) {
     (workspace) => workspace.id === params.workspace,
   );
   const activeWorkspace = selectedWorkspace ?? workspaces[0];
+  const { data: projectData, error: projectError } = activeWorkspace
+    ? await apiFetch<{ projects: ApiProject[] }>(
+        `/workspaces/${activeWorkspace.id}/projects`,
+      )
+    : { data: null, error: null };
+  const { data: taskData, error: taskError } = activeWorkspace
+    ? await apiFetch<{ tasks: ApiTask[] }>(
+        `/workspaces/${activeWorkspace.id}/tasks`,
+      )
+    : { data: null, error: null };
 
   return (
     <div className="space-y-7">
@@ -58,7 +73,11 @@ export default async function AppHome({ searchParams }: AppHomeProps) {
         <WorkspaceList
           workspaces={workspaces}
           error={error ?? undefined}
+          projects={projectData?.projects ?? []}
+          projectError={projectError ?? undefined}
           selectedWorkspaceId={selectedWorkspace?.id}
+          taskError={taskError ?? undefined}
+          tasks={taskData?.tasks ?? []}
         />
       </section>
     </div>

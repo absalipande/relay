@@ -26,15 +26,18 @@ The detailed product and visual direction is tracked in [docs/product-direction.
 - [x] First-workspace setup route for new accounts
 - [x] Workspaces and workspace members
 - [ ] Workspace roles and permissions
-- [ ] Projects inside workspaces
+- [x] Projects inside workspaces
 - [ ] Project members and project roles
-- [ ] Tasks with status, priority, assignee, and due date
+- [x] Tasks with status, priority, assignee, and due date
+- [x] Task checklist items
 - [ ] Comments
 - [ ] Activity logs
 - [ ] Kanban board
 - [ ] Task table view
 - [x] Contained workspace shell with sidebar, navbar, main canvas, and dynamic right context panel scaffold
 - [ ] Basic workspace/project settings
+- [ ] Project details page with project-scoped task creation and task list
+- [ ] Task details page/panel with checklist editing and status controls
 
 ## Version 1 Polish
 
@@ -46,6 +49,22 @@ The detailed product and visual direction is tracked in [docs/product-direction.
 - [ ] Workspace overview dashboard
 - [ ] Project analytics
 - [ ] Responsive UI polish
+
+## Near-Term Product Direction
+
+The workspace overview should stay a compact summary surface. It can show KPI
+tiles, project summaries, task status, recent activity, and deadlines, but it
+should not host full creation workflows beyond lightweight workspace-level
+actions such as creating a project.
+
+Next work should move deeper workflows into dedicated product surfaces:
+
+1. Project details page: project header, description, status, task creation,
+   project task list, and eventually board/table tabs.
+2. Task details page or context panel: title, description, status, priority,
+   due date, checklist editing, comments, and activity.
+3. Workspace overview polish: compact, mostly borderless sections that blend
+   with the white app shell and avoid unnecessary scrolling.
 
 ## AI Assistant Panel
 

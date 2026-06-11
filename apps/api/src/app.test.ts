@@ -105,6 +105,137 @@ describe("api app", () => {
       role: "owner",
     });
   });
+
+  it("creates and lists projects inside a workspace", async () => {
+    const supabase = createFakeSupabase();
+    const app = await buildApp(testConfig, {
+      supabase,
+      createSupabaseForUser: () => supabase,
+    });
+
+    const createWorkspaceResponse = await app.inject({
+      method: "POST",
+      url: "/workspaces",
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+      payload: {
+        name: "Product Team",
+      },
+    });
+    const workspaceId = createWorkspaceResponse.json().workspace.id;
+
+    const createProjectResponse = await app.inject({
+      method: "POST",
+      url: `/workspaces/${workspaceId}/projects`,
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+      payload: {
+        name: "Mobile Launch",
+        key: "MOB",
+        description: "Ship the first public mobile release.",
+      },
+    });
+
+    expect(createProjectResponse.statusCode).toBe(201);
+    expect(createProjectResponse.json().project).toMatchObject({
+      workspace_id: workspaceId,
+      name: "Mobile Launch",
+      key: "MOB",
+      status: "active",
+    });
+
+    const listProjectResponse = await app.inject({
+      method: "GET",
+      url: `/workspaces/${workspaceId}/projects`,
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+    });
+
+    expect(listProjectResponse.statusCode).toBe(200);
+    expect(listProjectResponse.json().projects).toHaveLength(1);
+    expect(listProjectResponse.json().projects[0]).toMatchObject({
+      name: "Mobile Launch",
+      key: "MOB",
+    });
+  });
+
+  it("creates and lists tasks with checklist items", async () => {
+    const supabase = createFakeSupabase();
+    const app = await buildApp(testConfig, {
+      supabase,
+      createSupabaseForUser: () => supabase,
+    });
+
+    const createWorkspaceResponse = await app.inject({
+      method: "POST",
+      url: "/workspaces",
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+      payload: {
+        name: "Product Team",
+      },
+    });
+    const workspaceId = createWorkspaceResponse.json().workspace.id;
+
+    const createProjectResponse = await app.inject({
+      method: "POST",
+      url: `/workspaces/${workspaceId}/projects`,
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+      payload: {
+        name: "Mobile Launch",
+        key: "MOB",
+      },
+    });
+    const projectId = createProjectResponse.json().project.id;
+
+    const createTaskResponse = await app.inject({
+      method: "POST",
+      url: `/workspaces/${workspaceId}/tasks`,
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+      payload: {
+        projectId,
+        title: "QA sign-in flow",
+        description: "Cover happy path and reset-password handoff.",
+        priority: "high",
+        dueDate: "2026-06-30",
+        checklistItems: ["Email/password", "Invalid password", "Reset link"],
+      },
+    });
+
+    expect(createTaskResponse.statusCode).toBe(201);
+    expect(createTaskResponse.json().task).toMatchObject({
+      workspace_id: workspaceId,
+      project_id: projectId,
+      title: "QA sign-in flow",
+      priority: "high",
+      status: "todo",
+    });
+    expect(createTaskResponse.json().task.checklist_items).toHaveLength(3);
+
+    const listTaskResponse = await app.inject({
+      method: "GET",
+      url: `/workspaces/${workspaceId}/tasks?projectId=${projectId}`,
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+    });
+
+    expect(listTaskResponse.statusCode).toBe(200);
+    expect(listTaskResponse.json().tasks).toHaveLength(1);
+    expect(listTaskResponse.json().tasks[0].checklist_items).toHaveLength(3);
+    expect(listTaskResponse.json().tasks[0].checklist_items[0]).toMatchObject({
+      title: "Email/password",
+      is_done: false,
+    });
+  });
 });
 
 function createFakeSupabase() {
@@ -120,6 +251,41 @@ function createFakeSupabase() {
     user_id: string;
     role: string;
     created_at: string;
+  }> = [];
+  const projects: Array<{
+    id: string;
+    workspace_id: string;
+    name: string;
+    key: string;
+    description: string | null;
+    status: string;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  }> = [];
+  const tasks: Array<{
+    id: string;
+    workspace_id: string;
+    project_id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    priority: string;
+    assignee_id: string | null;
+    due_date: string | null;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  }> = [];
+  const taskChecklistItems: Array<{
+    id: string;
+    task_id: string;
+    workspace_id: string;
+    title: string;
+    is_done: boolean;
+    position: number;
+    created_at: string;
+    updated_at: string;
   }> = [];
   const user = {
     id: "user-1",
@@ -144,6 +310,9 @@ function createFakeSupabase() {
     },
     from(table: string) {
       return createTableQuery(table, {
+        projects,
+        taskChecklistItems,
+        tasks,
         workspaces,
         workspaceMembers,
       });
@@ -183,6 +352,41 @@ function createFakeSupabase() {
 function createTableQuery(
   table: string,
   store: {
+    projects: Array<{
+      id: string;
+      workspace_id: string;
+      name: string;
+      key: string;
+      description: string | null;
+      status: string;
+      created_by: string | null;
+      created_at: string;
+      updated_at: string;
+    }>;
+    taskChecklistItems: Array<{
+      id: string;
+      task_id: string;
+      workspace_id: string;
+      title: string;
+      is_done: boolean;
+      position: number;
+      created_at: string;
+      updated_at: string;
+    }>;
+    tasks: Array<{
+      id: string;
+      workspace_id: string;
+      project_id: string;
+      title: string;
+      description: string | null;
+      status: string;
+      priority: string;
+      assignee_id: string | null;
+      due_date: string | null;
+      created_by: string | null;
+      created_at: string;
+      updated_at: string;
+    }>;
     workspaces: Array<{
       id: string;
       name: string;
@@ -203,10 +407,15 @@ function createTableQuery(
   let updateValue: unknown = null;
   let selectedColumns = "";
   let deleteMode = false;
+  let countMode = false;
+  let headMode = false;
+  const inFilters = new Map<string, string[]>();
 
   const query = {
-    select(columns: string) {
+    select(columns: string, options?: { count?: string; head?: boolean }) {
       selectedColumns = columns;
+      countMode = Boolean(options?.count);
+      headMode = Boolean(options?.head);
       return query;
     },
     insert(value: unknown) {
@@ -233,6 +442,61 @@ function createTableQuery(
           }),
           created_at: "2026-06-10T00:00:00.000Z",
         });
+      }
+
+      if (table === "projects") {
+        const project = {
+          ...(value as {
+            id: string;
+            workspace_id: string;
+            name: string;
+            key: string;
+            description: string | null;
+            created_by: string;
+          }),
+          status: "active",
+          created_at: "2026-06-10T00:00:00.000Z",
+          updated_at: "2026-06-10T00:00:00.000Z",
+        };
+        store.projects.push(project);
+      }
+
+      if (table === "tasks") {
+        const task = {
+          ...(value as {
+            id: string;
+            workspace_id: string;
+            project_id: string;
+            title: string;
+            description: string | null;
+            status: string;
+            priority: string;
+            assignee_id: string | null;
+            due_date: string | null;
+            created_by: string | null;
+          }),
+          created_at: "2026-06-10T00:00:00.000Z",
+          updated_at: "2026-06-10T00:00:00.000Z",
+        };
+        store.tasks.push(task);
+      }
+
+      if (table === "task_checklist_items") {
+        const values = Array.isArray(value) ? value : [value];
+        for (const item of values) {
+          store.taskChecklistItems.push({
+            ...(item as {
+              id: string;
+              task_id: string;
+              workspace_id: string;
+              title: string;
+              position: number;
+            }),
+            is_done: false,
+            created_at: "2026-06-10T00:00:00.000Z",
+            updated_at: "2026-06-10T00:00:00.000Z",
+          });
+        }
       }
 
       return query;
@@ -262,6 +526,33 @@ function createTableQuery(
         }
       }
 
+      if (updateValue && table === "projects" && column === "id") {
+        const project = store.projects.find((item) => item.id === value);
+        if (project) {
+          Object.assign(project, updateValue);
+        }
+      }
+
+      if (updateValue && table === "tasks" && column === "id") {
+        const task = store.tasks.find((item) => item.id === value);
+        if (task) {
+          Object.assign(task, updateValue);
+        }
+      }
+
+      if (updateValue && table === "task_checklist_items" && column === "id") {
+        const checklistItem = store.taskChecklistItems.find(
+          (item) => item.id === value,
+        );
+        if (checklistItem) {
+          Object.assign(checklistItem, updateValue);
+        }
+      }
+
+      return query;
+    },
+    in(column: string, values: string[]) {
+      inFilters.set(column, values);
       return query;
     },
     order() {
@@ -271,6 +562,27 @@ function createTableQuery(
       if (table === "workspaces" && insertValue) {
         return {
           data: store.workspaces.at(-1),
+          error: null,
+        };
+      }
+
+      if (table === "projects" && insertValue) {
+        return {
+          data: store.projects.at(-1),
+          error: null,
+        };
+      }
+
+      if (table === "tasks" && insertValue) {
+        return {
+          data: store.tasks.at(-1),
+          error: null,
+        };
+      }
+
+      if (table === "task_checklist_items" && insertValue) {
+        return {
+          data: store.taskChecklistItems.at(-1),
           error: null,
         };
       }
@@ -300,6 +612,30 @@ function createTableQuery(
         };
       }
 
+      if (table === "projects") {
+        return {
+          data:
+            store.projects.find(
+              (project) =>
+                project.workspace_id === filters.get("workspace_id") &&
+                project.id === filters.get("id"),
+            ) ?? null,
+          error: null,
+        };
+      }
+
+      if (table === "tasks") {
+        return {
+          data:
+            store.tasks.find(
+              (task) =>
+                task.workspace_id === filters.get("workspace_id") &&
+                task.id === filters.get("id"),
+            ) ?? null,
+          error: null,
+        };
+      }
+
       return { data: null, error: null };
     },
     then(resolve: (value: unknown) => void) {
@@ -314,6 +650,50 @@ function createTableQuery(
                   (workspace) => workspace.id === member.workspace_id,
                 ) ?? null,
             })),
+          error: null,
+        });
+        return;
+      }
+
+      if (table === "projects") {
+        resolve({
+          data: store.projects.filter(
+            (project) => project.workspace_id === filters.get("workspace_id"),
+          ),
+          error: null,
+        });
+        return;
+      }
+
+      if (table === "tasks") {
+        resolve({
+          data: store.tasks.filter(
+            (task) =>
+              task.workspace_id === filters.get("workspace_id") &&
+              (!filters.has("project_id") ||
+                task.project_id === filters.get("project_id")),
+          ),
+          error: null,
+        });
+        return;
+      }
+
+      if (table === "task_checklist_items") {
+        const filteredItems = store.taskChecklistItems.filter((item) => {
+          const taskIdFilter = filters.get("task_id");
+          const workspaceIdFilter = filters.get("workspace_id");
+          const taskIds = inFilters.get("task_id");
+
+          return (
+            (!taskIdFilter || item.task_id === taskIdFilter) &&
+            (!workspaceIdFilter || item.workspace_id === workspaceIdFilter) &&
+            (!taskIds || taskIds.includes(item.task_id))
+          );
+        });
+
+        resolve({
+          data: headMode ? null : filteredItems,
+          count: countMode ? filteredItems.length : null,
           error: null,
         });
         return;

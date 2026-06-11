@@ -47,7 +47,7 @@ type RelayAppShellProps = {
   workspaceName?: string;
 };
 
-type NavKey = "overview" | "settings";
+type NavKey = "overview" | "projects" | "settings";
 
 type ShellWorkspace = {
   id: string;
@@ -68,7 +68,7 @@ type NavItemConfig = {
 
 const primaryNav: NavItemConfig[] = [
   { label: "Overview", href: "/app", icon: Home, navKey: "overview" },
-  { label: "Projects", href: "/app", icon: FolderKanban },
+  { label: "Projects", href: "/app#projects", icon: FolderKanban, navKey: "projects" },
   { label: "Tasks", href: "/app", icon: ListTodo },
   { label: "Calendar", href: "/app", icon: CalendarDays },
   { label: "Time tracking", href: "/app", icon: Timer },
@@ -103,6 +103,9 @@ export function RelayAppShell({
   const resolvedActiveNav = activeNav ?? getActiveNav(pathname);
   const resolvedPageTitle = pageTitle ?? getPageTitle(pathname);
   const selectedWorkspaceId = searchParams.get("workspace");
+  const workspaceQuery = selectedWorkspaceId
+    ? `?workspace=${encodeURIComponent(selectedWorkspaceId)}`
+    : "";
   const selectedWorkspace = selectedWorkspaceId
     ? workspaces.find((workspace) => workspace.id === selectedWorkspaceId)
     : undefined;
@@ -189,9 +192,13 @@ export function RelayAppShell({
             <NavGroup
               label="Overview"
               items={primaryNav.map((item) =>
-                item.label === "Overview"
+                item.navKey === "overview" || item.navKey === "projects"
                   ? {
                       ...item,
+                      href:
+                        item.navKey === "projects"
+                          ? `/app${workspaceQuery}#projects`
+                          : `/app${workspaceQuery}`,
                       active: item.navKey === resolvedActiveNav,
                     }
                   : { ...item, disabled: !hasWorkspace },

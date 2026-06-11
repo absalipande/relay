@@ -11,6 +11,48 @@ export type ApiWorkspace = {
   role: string;
 };
 
+export type ApiProject = {
+  id: string;
+  workspace_id: string;
+  name: string;
+  key: string;
+  description: string | null;
+  status: "active" | "paused" | "archived";
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApiTaskStatus = "todo" | "in_progress" | "done";
+export type ApiTaskPriority = "low" | "medium" | "high" | "urgent";
+
+export type ApiTaskChecklistItem = {
+  id: string;
+  task_id: string;
+  workspace_id: string;
+  title: string;
+  is_done: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApiTask = {
+  id: string;
+  workspace_id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  status: ApiTaskStatus;
+  priority: ApiTaskPriority;
+  assignee_id: string | null;
+  due_date: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  checklist_items: ApiTaskChecklistItem[];
+};
+
 type ApiResult<T> =
   | {
       data: T;

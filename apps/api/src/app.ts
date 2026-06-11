@@ -8,6 +8,8 @@ import {
 } from "./lib/supabase.js";
 import { authPlugin } from "./plugins/auth.js";
 import { healthRoutes } from "./routes/health.js";
+import { projectRoutes } from "./routes/projects.js";
+import { taskRoutes } from "./routes/tasks.js";
 import { workspaceRoutes } from "./routes/workspaces.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -45,6 +47,8 @@ export async function buildApp(
   await authPlugin(app);
   await app.register(healthRoutes);
   await app.register(workspaceRoutes);
+  await app.register(projectRoutes);
+  await app.register(taskRoutes);
 
   return app;
 }

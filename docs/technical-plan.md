@@ -63,6 +63,17 @@ apps/web/
   app/
     (public)/
       page.tsx
+      verify-email/
+        page.tsx
+    app/
+      layout.tsx
+      loading.tsx
+      page.tsx
+      profile/
+        page.tsx
+      workspaces/
+        new/
+          page.tsx
     icon.svg
     layout.tsx
   components/
@@ -73,10 +84,29 @@ apps/web/
       components/
         auth-form.tsx
         auth-hero.tsx
-    workspaces/
+        auth-panel.tsx
+    projects/
+      actions.ts
       components/
+        project-create-dialog.tsx
+        project-create-form.tsx
+        project-list.tsx
+    tasks/
+      actions.ts
+      components/
+        task-create-form.tsx
+        task-list.tsx
+    workspaces/
+      actions.ts
+      components/
+        workspace-context-panel.tsx
+        workspace-create-form.tsx
         workspace-empty-state.tsx
+        workspace-list.tsx
+        workspace-management.tsx
   lib/
+    api/
+      server.ts
     query/
       query-provider.tsx
     supabase/
@@ -124,6 +154,12 @@ UI component strategy:
 - Feature pages, including auth, should use shadcn primitives such as `Button`, `Input`, `Label`, and `Tabs` instead of raw native controls when an appropriate primitive exists.
 - Keep feature-specific composed UI inside each `features/*/components` folder.
 - Add shadcn components on demand instead of preloading a large component set.
+- Keep workspace overview compact and summary-oriented. Project creation can
+  live in a quiet modal, but task creation belongs on project details or task
+  detail surfaces where project context is explicit.
+- Prefer borderless outer overview sections that blend into the white app shell;
+  use subtle rings, dividers, or dashed borders only for inner lists and empty
+  states that need structure.
 
 ### Fastify API
 
@@ -188,10 +224,12 @@ Rules for introducing Go:
 - [x] Implement workspace tables and membership flows
 - [x] Implement Fastify workspace routes
 - [x] Redirect signed-in users with no workspaces to `/app/workspaces/new`
-- [ ] Implement projects
-- [ ] Implement tasks
+- [x] Implement projects
+- [x] Implement tasks
 - [ ] Implement comments and activity logs
 - [x] Build contained workspace shell with sidebar, navbar, and dynamic right context panel scaffold
+- [ ] Build project details page with project-scoped task creation
+- [ ] Build task details page or context panel with checklist editing
 - [ ] Build project board, task table, full context panel details, and settings screens
 - [ ] Add focused Go microservice only after a clear async/backend-heavy need emerges
 
@@ -209,17 +247,27 @@ Relay should keep the AI assistant panel from the product roadmap. In the TypeSc
 The TypeScript scaffold is in place:
 
 - `apps/web` has the Next.js app.
-- `apps/api` has the Fastify API skeleton, health route, env validation, Supabase admin client boundary, and Vitest coverage.
+- `apps/api` has the Fastify API skeleton, health route, env validation,
+  Supabase admin client boundary, workspace/project/task routes, and Vitest
+  coverage.
 - `packages/shared` has the initial shared TypeScript package.
-- `supabase/migrations` has the first workspace/member migration.
+- `supabase/migrations` has workspace/member, project, task, and checklist
+  migrations with RLS policies.
 - `supabase/config.toml` links the remote Supabase project.
 - Local untracked API/web env files are configured with the Supabase URL, publishable key, service role key, and database URL.
 - The initial workspace/member migration has been applied to the remote Supabase database with `psql`.
 - Remote verification confirmed the workspace/member tables have nine RLS policies.
-- `apps/web` has a feature-based frontend structure, Supabase browser/server clients, session refresh proxy, Relay logo assets, a polished split-screen sign-in/sign-up page, an email verification holding page, a first-workspace setup route at `/app/workspaces/new`, and a Veyra/Jira-inspired app shell under `/app`.
+- `apps/web` has a feature-based frontend structure, Supabase browser/server
+  clients, session refresh proxy, Relay logo assets, a polished split-screen
+  sign-in/sign-up page, an email verification holding page, a first-workspace
+  setup route at `/app/workspaces/new`, a Veyra/Jira-inspired app shell under
+  `/app`, a compact workspace overview, a project creation modal, project/task
+  summary lists, and task checklist UI primitives ready for deeper pages.
 
-The next planned implementation step is to continue workspace management polish
-and then baseline Supabase CLI migration history before future migration pushes.
+The next planned implementation step is to add dedicated project and task pages:
+project details should own project-scoped task creation, and task details should
+own checklist editing, comments, and activity. The Supabase CLI migration
+history still needs to be baselined before future migration pushes.
 
 ## Migration Note
 

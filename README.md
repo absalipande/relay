@@ -44,8 +44,8 @@ relay/
 
 ## Run locally
 
-The TypeScript stack is scaffolded, Supabase is connected, and the first auth
-screen is in place. Product flows are still early.
+The TypeScript stack is scaffolded, Supabase is connected, auth is in place, and
+the first workspace/project/task flows are underway.
 
 Frontend:
 
@@ -84,7 +84,10 @@ apps/web/
       verify-email/
         page.tsx
     app/
+      loading.tsx
       page.tsx
+      profile/
+        page.tsx
       workspaces/
         new/
           page.tsx
@@ -98,10 +101,29 @@ apps/web/
       components/
         auth-form.tsx
         auth-hero.tsx
-    workspaces/
+        auth-panel.tsx
+    projects/
+      actions.ts
       components/
+        project-create-dialog.tsx
+        project-create-form.tsx
+        project-list.tsx
+    tasks/
+      actions.ts
+      components/
+        task-create-form.tsx
+        task-list.tsx
+    workspaces/
+      actions.ts
+      components/
+        workspace-context-panel.tsx
+        workspace-create-form.tsx
         workspace-empty-state.tsx
+        workspace-list.tsx
+        workspace-management.tsx
   lib/
+    api/
+      server.ts
     query/
       query-provider.tsx
     supabase/
@@ -136,8 +158,9 @@ npm run build
 
 Supabase migrations live under `supabase/migrations`. The first workspace/member
 migration has been applied directly to the linked Supabase project and verified.
-Because it was applied with `psql`, the Supabase CLI migration history still
-needs to be baselined before using future `supabase db push` workflows.
+Later local migrations add projects, tasks, and task checklist items. Because
+the first migration was applied with `psql`, the Supabase CLI migration history
+still needs to be baselined before using future `supabase db push` workflows.
 
 The current auth page uses Supabase email/password sign-in and sign-up. New
 sign-ups are sent to `/verify-email` with the submitted email in the query
@@ -146,6 +169,11 @@ their email, Supabase redirects them back to the public sign-in page. Once a
 signed-in user reaches `/app`, users without any workspaces are redirected to
 `/app/workspaces/new` to create their first workspace. Google OAuth is shown as
 the intended social provider, but OAuth provider setup is not wired yet.
+
+The workspace overview now shows compact KPI, project, task-status, recent
+activity, and deadline summaries. Project creation uses a quiet modal from the
+overview. Task creation should move next into dedicated project details pages,
+with checklist editing moving into task details or the right context panel.
 
 ## Progress
 
