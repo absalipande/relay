@@ -18,6 +18,9 @@ Relay is moving to a TypeScript/Supabase stack.
 - Testing: Vitest for shared/API unit tests, Playwright for frontend flows
 
 Product and visual direction is tracked in [docs/product-direction.md](product-direction.md).
+The external Jira clone reference is summarized in [docs/jira-clone-reference.md](jira-clone-reference.md).
+
+Product implementation rule: use the Jira clone reference for feature coverage and user flows, but implement those flows with Relay's stack and UX. Do not port Appwrite, Hono-in-Next routes, or reference-specific UI styling into Relay.
 
 ## Monorepo Layout
 

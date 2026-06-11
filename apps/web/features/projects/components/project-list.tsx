@@ -10,6 +10,7 @@ import {
   FolderKanban,
   MoreHorizontal,
 } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
 
 type ProjectListProps = {
@@ -74,9 +75,12 @@ function ProjectRow({
           <span className="max-w-24 truncate rounded-[0.55rem] bg-[#EEF6FF] px-2.5 py-1.5 text-xs font-semibold leading-none text-[#007AFF]">
             {project.key}
           </span>
-          <h3 className="truncate text-sm font-semibold text-[#111111]">
+          <Link
+            href={`/app/workspaces/${workspaceId}/projects/${project.id}`}
+            className="truncate text-sm font-semibold text-[#111111] hover:text-[#007AFF]"
+          >
             {project.name}
-          </h3>
+          </Link>
           <Badge
             variant="outline"
             className="rounded-[0.55rem] border-[#DBEAFE] bg-[#EFF6FF] text-[#2563EB]"

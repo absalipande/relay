@@ -2,21 +2,13 @@
 
 import {
   Bell,
-  Building2,
-  CalendarDays,
   ChevronDown,
-  CircleCheck,
-  FileText,
-  FolderKanban,
-  GanttChartSquare,
   Home,
   ListTodo,
-  MessageCircle,
   PanelLeft,
   Plus,
   Search,
   Settings,
-  Timer,
   User,
   Users,
 } from "lucide-react";
@@ -32,8 +24,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ProjectCreateDialog } from "@/features/projects/components/project-create-dialog";
 import { signOut } from "@/features/workspaces/actions";
-import { WorkspaceContextPanel } from "@/features/workspaces/components/workspace-context-panel";
 
 type RelayAppShellProps = {
   activeNav?: NavKey;
@@ -43,11 +35,12 @@ type RelayAppShellProps = {
   email: string;
   hasWorkspace?: boolean;
   pageTitle?: string;
+  projects?: ShellProject[];
   workspaces?: ShellWorkspace[];
   workspaceName?: string;
 };
 
-type NavKey = "overview" | "projects" | "settings";
+type NavKey = "home" | "tasks" | "settings" | "members" | "projects";
 
 type ShellWorkspace = {
   id: string;
@@ -55,6 +48,14 @@ type ShellWorkspace = {
   slug: string;
   created_at: string;
   role: string;
+};
+
+type ShellProject = {
+  id: string;
+  workspace_id: string;
+  name: string;
+  key: string;
+  status: "active" | "paused" | "archived";
 };
 
 type NavItemConfig = {
@@ -67,24 +68,10 @@ type NavItemConfig = {
 };
 
 const primaryNav: NavItemConfig[] = [
-  { label: "Overview", href: "/app", icon: Home, navKey: "overview" },
-  { label: "Projects", href: "/app#projects", icon: FolderKanban, navKey: "projects" },
-  { label: "Tasks", href: "/app", icon: ListTodo },
-  { label: "Calendar", href: "/app", icon: CalendarDays },
-  { label: "Time tracking", href: "/app", icon: Timer },
-  { label: "Reports", href: "/app", icon: GanttChartSquare },
-];
-
-const secondaryNav: NavItemConfig[] = [
-  { label: "Team", href: "/app", icon: Users },
-  { label: "Clients", href: "/app", icon: Building2 },
-  { label: "Files", href: "/app", icon: FileText },
-  {
-    label: "Settings",
-    href: "/app/account/settings",
-    icon: Settings,
-    navKey: "settings",
-  },
+  { label: "Home", href: "", icon: Home, navKey: "home" },
+  { label: "My Tasks", href: "/tasks", icon: ListTodo, navKey: "tasks" },
+  { label: "Settings", href: "/settings", icon: Settings, navKey: "settings" },
+  { label: "Members", href: "/members", icon: Users, navKey: "members" },
 ];
 
 export function RelayAppShell({
@@ -95,6 +82,7 @@ export function RelayAppShell({
   email,
   hasWorkspace = false,
   pageTitle,
+  projects = [],
   workspaces = [],
   workspaceName,
 }: RelayAppShellProps) {
@@ -102,19 +90,16 @@ export function RelayAppShell({
   const searchParams = useSearchParams();
   const resolvedActiveNav = activeNav ?? getActiveNav(pathname);
   const resolvedPageTitle = pageTitle ?? getPageTitle(pathname);
-  const selectedWorkspaceId = searchParams.get("workspace");
-  const workspaceQuery = selectedWorkspaceId
-    ? `?workspace=${encodeURIComponent(selectedWorkspaceId)}`
+  const routeWorkspaceId = getWorkspaceIdFromPath(pathname);
+  const requestedWorkspaceId = searchParams.get("workspace") ?? routeWorkspaceId;
+  const selectedWorkspace = requestedWorkspaceId
+    ? (workspaces.find((workspace) => workspace.id === requestedWorkspaceId) ??
+      workspaces[0])
+    : workspaces[0];
+  const workspaceQuery = selectedWorkspace
+    ? `?workspace=${encodeURIComponent(selectedWorkspace.id)}`
     : "";
-  const selectedWorkspace = selectedWorkspaceId
-    ? workspaces.find((workspace) => workspace.id === selectedWorkspaceId)
-    : undefined;
-  const panelMode = searchParams.get("panel") === "ai" ? "ai" : "details";
-  const resolvedContext =
-    context ??
-    (selectedWorkspace && pathname === "/app" ? (
-      <WorkspaceContextPanel workspace={selectedWorkspace} mode={panelMode} />
-    ) : undefined);
+  const resolvedContext = context;
   const hasContext = Boolean(resolvedContext);
   const displayedWorkspaceName = hasWorkspace
     ? (selectedWorkspace?.name ?? workspaceName ?? "Workspace")
@@ -123,6 +108,13 @@ export function RelayAppShell({
     ? displayedWorkspaceName.slice(0, 2).toUpperCase()
     : "--";
   const accountName = displayName ?? email;
+  const visibleProjects = selectedWorkspace
+    ? projects.filter(
+        (project) =>
+          project.workspace_id === selectedWorkspace.id &&
+          project.status !== "archived",
+      )
+    : [];
 
   return (
     <main className="h-[var(--relay-app-height)] overflow-hidden bg-white text-[#111111]">
@@ -190,64 +182,30 @@ export function RelayAppShell({
 
           <nav className="mb-5 flex-1 space-y-4">
             <NavGroup
-              label="Overview"
+              label="Navigation"
               items={primaryNav.map((item) =>
-                item.navKey === "overview" || item.navKey === "projects"
+                selectedWorkspace
                   ? {
                       ...item,
                       href:
-                        item.navKey === "projects"
-                          ? `/app${workspaceQuery}#projects`
-                          : `/app${workspaceQuery}`,
+                        item.navKey === "home"
+                          ? `/app${workspaceQuery}`
+                          : `/app/workspaces/${selectedWorkspace.id}${item.href}`,
                       active: item.navKey === resolvedActiveNav,
                     }
-                  : { ...item, disabled: !hasWorkspace },
+                  : { ...item, disabled: true },
               )}
             />
-            <NavGroup
-              label="Workspace"
-              items={secondaryNav.map((item) => ({
-                ...item,
-                active: item.navKey === resolvedActiveNav,
-                disabled: !hasWorkspace && item.navKey !== "settings",
-              }))}
-              separated
-            />
+            {selectedWorkspace ? (
+              <ProjectNavGroup
+                pathname={pathname}
+                projects={visibleProjects}
+                workspace={selectedWorkspace}
+              />
+            ) : null}
           </nav>
 
           <div className="space-y-4 pb-4">
-            <div className="rounded-[0.95rem] border border-[#E4E4E7] bg-white p-4 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
-              <div className="flex items-center justify-between">
-                <p className="text-[0.9rem] font-semibold">Quick create</p>
-                <Plus className="size-4 text-[#007AFF]" />
-              </div>
-              <div className="mt-3 space-y-2.5">
-                {[
-                  { label: "New project", icon: CircleCheck },
-                  { label: "New task", icon: CircleCheck },
-                  { label: "New milestone", icon: MessageCircle },
-                  { label: "Invite member", icon: Users },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    disabled={!hasWorkspace}
-                    className={`flex w-full items-center gap-2 rounded-[0.75rem] px-1.5 py-1.5 text-[0.86rem] font-medium transition-colors ${
-                      hasWorkspace
-                        ? "text-[#52525B] hover:bg-[#F4F4F5] hover:text-[#111111]"
-                        : "cursor-not-allowed text-[#A1A1AA]"
-                    }`}
-                  >
-                    <Icon className="size-4 text-[#71717A]" />
-                    {item.label}
-                  </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="flex items-center gap-3 rounded-[0.95rem] border border-[#E4E4E7] bg-white p-3 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#030712] text-sm font-semibold text-white">
                 {getInitial(accountName)}
@@ -417,6 +375,66 @@ function NavGroup({
   );
 }
 
+function ProjectNavGroup({
+  pathname,
+  projects,
+  workspace,
+}: {
+  pathname: string;
+  projects: ShellProject[];
+  workspace: ShellWorkspace;
+}) {
+  return (
+    <div className="border-t border-[#E4E4E7] pt-4">
+      <div className="mb-1.5 flex items-center justify-between px-3">
+        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-[#9CA3AF]">
+          Projects
+        </p>
+        <ProjectCreateDialog
+          triggerVariant="icon"
+          workspaceId={workspace.id}
+          workspaceName={workspace.name}
+        />
+      </div>
+      <div className="space-y-0.5">
+        {projects.length > 0 ? (
+          projects.map((project) => {
+            const href = `/app/workspaces/${workspace.id}/projects/${project.id}`;
+            const active = pathname === href;
+
+            return (
+              <Link
+                key={project.id}
+                href={href}
+                className={`flex items-center gap-2.5 rounded-[0.85rem] px-3 py-2 text-[0.86rem] font-medium transition-colors ${
+                  active
+                    ? "bg-[#eff6ff] text-[#007AFF]"
+                    : "text-[#52525B] hover:bg-[#F4F4F5] hover:text-[#18181B]"
+                }`}
+              >
+                <span
+                  className={`grid size-7 shrink-0 place-items-center rounded-[0.6rem] text-[0.66rem] font-semibold ${
+                    active
+                      ? "bg-white text-[#007AFF]"
+                      : "bg-[#F4F4F5] text-[#64748B]"
+                  }`}
+                >
+                  {project.key.slice(0, 2)}
+                </span>
+                <span className="truncate">{project.name}</span>
+              </Link>
+            );
+          })
+        ) : (
+          <p className="px-3 py-2 text-[0.78rem] leading-5 text-[#94A3B8]">
+            No projects yet
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function NavItem({
   label,
   href,
@@ -464,12 +482,24 @@ function getInitial(email: string) {
 }
 
 function getActiveNav(pathname: string): NavKey | undefined {
-  if (pathname.startsWith("/app/account/settings")) {
+  if (pathname.includes("/settings")) {
     return "settings";
   }
 
+  if (pathname.includes("/members")) {
+    return "members";
+  }
+
+  if (pathname.includes("/projects/")) {
+    return "projects";
+  }
+
+  if (pathname.includes("/tasks/")) {
+    return "tasks";
+  }
+
   if (pathname === "/app") {
-    return "overview";
+    return "home";
   }
 
   return undefined;
@@ -480,6 +510,18 @@ function getPageTitle(pathname: string) {
     return "Account Settings";
   }
 
+  if (pathname.includes("/members")) {
+    return "Members";
+  }
+
+  if (pathname.includes("/settings")) {
+    return "Workspace Settings";
+  }
+
+  if (pathname.endsWith("/tasks")) {
+    return "My Tasks";
+  }
+
   if (pathname.startsWith("/app/profile")) {
     return "Profile";
   }
@@ -488,5 +530,18 @@ function getPageTitle(pathname: string) {
     return "Workspaces";
   }
 
+  if (pathname.includes("/projects/")) {
+    return "Project";
+  }
+
+  if (pathname.includes("/tasks/")) {
+    return "Task";
+  }
+
   return "Workspace Overview";
+}
+
+function getWorkspaceIdFromPath(pathname: string) {
+  const match = pathname.match(/^\/app\/workspaces\/([^/]+)/);
+  return match?.[1];
 }

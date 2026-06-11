@@ -1,5 +1,5 @@
 import { RelayAppShell } from "@/features/app-shell/components/relay-app-shell";
-import { apiFetch, type ApiWorkspace } from "@/lib/api/server";
+import { apiFetch, type ApiProject, type ApiWorkspace } from "@/lib/api/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -21,12 +21,23 @@ export default async function AppLayout({
     "/workspaces",
   );
   const workspaces = data?.workspaces ?? [];
+  const projectResults = await Promise.all(
+    workspaces.map(async (workspace) => {
+      const { data: projectData } = await apiFetch<{ projects: ApiProject[] }>(
+        `/workspaces/${workspace.id}/projects`,
+      );
+
+      return projectData?.projects ?? [];
+    }),
+  );
+  const projects = projectResults.flat();
 
   return (
     <RelayAppShell
       displayName={getUserName(user.user_metadata, user.email)}
       email={user.email ?? "Unknown user"}
       hasWorkspace={workspaces.length > 0}
+      projects={projects}
       workspaces={workspaces}
       workspaceName={workspaces[0]?.name}
     >

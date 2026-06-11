@@ -2,6 +2,18 @@
 
 Relay is a calm project workspace for small teams. It should feel like the useful center of Jira and ClickUp, but quieter, faster to understand, and designed around contextual help instead of configuration sprawl.
 
+## Product Thesis
+
+Relay is a Jira and ClickUp lite product. It should recreate the core project-management loop from the Jira clone reference first, then improve that loop with Relay's own interface, architecture, and contextual intelligence.
+
+Use the Jira clone reference as a feature and flow blueprint, not as an implementation blueprint:
+
+- Copy the product coverage: workspaces, projects, tasks, task views, task details, members, invites, settings, and analytics.
+- Keep Relay's stack: Next.js, Fastify, Supabase Auth/Postgres/RLS, shadcn/ui, Zod, and TanStack Query/server actions.
+- Keep Relay's UX direction: calmer than Jira and ClickUp, less configuration-heavy, compact, white-first, and context-aware.
+- Avoid exposing large create forms on primary work surfaces when the reference uses modals.
+- Add Relay-specific context panels and AI only after the core task/comment/activity loop is strong.
+
 ## Product Position
 
 Relay should combine:

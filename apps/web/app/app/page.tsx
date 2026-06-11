@@ -39,6 +39,11 @@ export default async function AppHome({ searchParams }: AppHomeProps) {
   const selectedWorkspace = workspaces.find(
     (workspace) => workspace.id === params.workspace,
   );
+
+  if (params.workspace && !selectedWorkspace) {
+    redirect("/app");
+  }
+
   const activeWorkspace = selectedWorkspace ?? workspaces[0];
   const { data: projectData, error: projectError } = activeWorkspace
     ? await apiFetch<{ projects: ApiProject[] }>(

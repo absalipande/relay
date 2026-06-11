@@ -11,6 +11,7 @@ The product name is Relay. Any older planning references to Worklane should be r
 Relay should feel like the useful center of Jira and ClickUp: structured enough for serious project tracking, flexible enough for small teams, and calmer than both. The differentiator is a persistent contextual right panel that starts as an inspector for selected projects/tasks and later becomes an AI assistant that can summarize, draft, and extract next actions from workspace context.
 
 The detailed product and visual direction is tracked in [docs/product-direction.md](docs/product-direction.md).
+The Jira clone reference is the base/core feature blueprint. Relay should recreate its main flows first, then improve them with Relay's stack, calmer UI, stronger permissions, comments/activity history, and later AI context.
 
 ## MVP Core
 
@@ -32,12 +33,15 @@ The detailed product and visual direction is tracked in [docs/product-direction.
 - [x] Task checklist items
 - [ ] Comments
 - [ ] Activity logs
-- [ ] Kanban board
+- [x] Kanban board scaffold
+- [ ] Durable Kanban ordering and drag updates
 - [ ] Task table view
-- [x] Contained workspace shell with sidebar, navbar, main canvas, and dynamic right context panel scaffold
+- [ ] Calendar view
+- [x] Contained workspace shell with sidebar, navbar, and main canvas
 - [ ] Basic workspace/project settings
-- [ ] Project details page with project-scoped task creation and task list
-- [ ] Task details page/panel with checklist editing and status controls
+- [x] Project details page with project-scoped modal task creation and task views
+- [x] Task details page with checklist editing and status controls
+- [ ] Members page with invite and role management
 
 ## Version 1 Polish
 
@@ -59,11 +63,14 @@ actions such as creating a project.
 
 Next work should move deeper workflows into dedicated product surfaces:
 
-1. Project details page: project header, description, status, task creation,
-   project task list, and eventually board/table tabs.
-2. Task details page or context panel: title, description, status, priority,
-   due date, checklist editing, comments, and activity.
-3. Workspace overview polish: compact, mostly borderless sections that blend
+1. Reference-style task views: table, Kanban, and calendar tabs, with task
+   creation in a modal rather than exposed inline forms.
+2. Members and invites: member list, invite code, role changes, and removal
+   confirmation.
+3. Workspace/project settings: rename, archive/delete, and role-gated controls.
+4. Task details: title, description, status, priority, due date, checklist
+   editing, comments, and activity.
+5. Workspace overview polish: compact, mostly borderless sections that blend
    with the white app shell and avoid unnecessary scrolling.
 
 ## AI Assistant Panel

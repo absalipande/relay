@@ -11,6 +11,8 @@ import { Loader2, Plus } from "lucide-react";
 import { useActionState, useEffect, useRef } from "react";
 
 type TaskCreateFormProps = {
+  lockedProjectId?: string;
+  onCreated?: () => void;
   projects: ApiProject[];
   workspaceId: string;
 };
@@ -19,19 +21,39 @@ const initialState = {
   message: null,
 };
 
-export function TaskCreateForm({ projects, workspaceId }: TaskCreateFormProps) {
+export function TaskCreateForm({
+  lockedProjectId,
+  onCreated,
+  projects,
+  workspaceId,
+}: TaskCreateFormProps) {
   const [state, formAction, pending] = useActionState(createTask, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  const activeProjects = projects.filter((project) => project.status !== "archived");
+  const hasSubmittedRef = useRef(false);
+  const activeProjects = projects.filter(
+    (project) => project.status !== "archived",
+  );
+  const selectedProject = lockedProjectId
+    ? activeProjects.find((project) => project.id === lockedProjectId)
+    : undefined;
 
   useEffect(() => {
-    if (!pending && state.message === null) {
+    if (!pending && state.message === null && hasSubmittedRef.current) {
       formRef.current?.reset();
+      hasSubmittedRef.current = false;
+      onCreated?.();
     }
-  }, [pending, state.message]);
+  }, [onCreated, pending, state.message]);
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form
+      ref={formRef}
+      action={formAction}
+      className="space-y-4"
+      onSubmit={() => {
+        hasSubmittedRef.current = true;
+      }}
+    >
       <input type="hidden" name="workspaceId" value={workspaceId} />
 
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
@@ -64,27 +86,40 @@ export function TaskCreateForm({ projects, workspaceId }: TaskCreateFormProps) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
-        <div className="space-y-2">
-          <Label htmlFor="task-project">Project</Label>
-          <NativeSelect
-            id="task-project"
-            name="projectId"
-            className="w-full"
-            disabled={activeProjects.length === 0}
-            aria-invalid={Boolean(state.fieldErrors?.projectId)}
-          >
-            {activeProjects.length === 0 ? (
-              <option value="">Create a project first</option>
-            ) : (
-              activeProjects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.key} - {project.name}
-                </option>
-              ))
-            )}
-          </NativeSelect>
-          <FieldError errors={state.fieldErrors?.projectId} />
-        </div>
+        {lockedProjectId ? (
+          <div className="space-y-2">
+            <Label>Project</Label>
+            <input type="hidden" name="projectId" value={lockedProjectId} />
+            <div className="flex h-10 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-[#F8FAFC] px-3 text-sm font-medium text-[#334155]">
+              {selectedProject
+                ? `${selectedProject.key} - ${selectedProject.name}`
+                : "Project selected"}
+            </div>
+            <FieldError errors={state.fieldErrors?.projectId} />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="task-project">Project</Label>
+            <NativeSelect
+              id="task-project"
+              name="projectId"
+              className="w-full"
+              disabled={activeProjects.length === 0}
+              aria-invalid={Boolean(state.fieldErrors?.projectId)}
+            >
+              {activeProjects.length === 0 ? (
+                <option value="">Create a project first</option>
+              ) : (
+                activeProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.key} - {project.name}
+                  </option>
+                ))
+              )}
+            </NativeSelect>
+            <FieldError errors={state.fieldErrors?.projectId} />
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="task-due-date">Due date</Label>
           <Input

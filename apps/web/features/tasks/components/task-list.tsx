@@ -14,6 +14,7 @@ import {
   CircleDotDashed,
   ListChecks,
 } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
 
 type TaskListProps = {
@@ -114,9 +115,12 @@ function TaskRow({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <StatusIcon className="size-4 text-[#007AFF]" />
-            <h3 className="truncate text-sm font-semibold text-[#111111]">
+            <Link
+              href={`/app/workspaces/${workspaceId}/tasks/${task.id}`}
+              className="truncate text-sm font-semibold text-[#111111] hover:text-[#007AFF]"
+            >
               {task.title}
-            </h3>
+            </Link>
             <Badge
               variant="outline"
               className={`rounded-[0.55rem] ${priorityClass[task.priority]}`}
