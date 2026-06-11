@@ -200,6 +200,7 @@ function createTableQuery(
 ) {
   const filters = new Map<string, string>();
   let insertValue: unknown = null;
+  let updateValue: unknown = null;
   let selectedColumns = "";
   let deleteMode = false;
 
@@ -236,6 +237,10 @@ function createTableQuery(
 
       return query;
     },
+    update(value: unknown) {
+      updateValue = value;
+      return query;
+    },
     delete() {
       deleteMode = true;
       return query;
@@ -248,6 +253,13 @@ function createTableQuery(
           (workspace) => workspace.id === value,
         );
         if (index >= 0) store.workspaces.splice(index, 1);
+      }
+
+      if (updateValue && table === "workspaces" && column === "id") {
+        const workspace = store.workspaces.find((item) => item.id === value);
+        if (workspace) {
+          Object.assign(workspace, updateValue);
+        }
       }
 
       return query;

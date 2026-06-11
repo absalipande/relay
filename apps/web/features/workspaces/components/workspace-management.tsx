@@ -1,31 +1,41 @@
 "use client";
 
 import {
-  Bot,
   CalendarDays,
-  CheckCircle2,
-  Edit3,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
+  Copy,
+  ExternalLink,
   FolderKanban,
+  FolderPlus,
   Grid2X2,
   List,
   Loader2,
-  MoreHorizontal,
+  Mail,
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   Trash2,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
 import {
+  forwardRef,
   useActionState,
   useEffect,
   useMemo,
   useState,
+  useTransition,
+  type ComponentPropsWithoutRef,
   type ComponentType,
   type ReactNode,
 } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -39,31 +49,30 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { WorkspaceCreateForm } from "@/features/workspaces/components/workspace-create-form";
 import {
   deleteWorkspace,
-  updateWorkspace,
+  markWorkspaceOpened,
+  updateWorkspaceIdentity,
   type DeleteWorkspaceState,
-  type WorkspaceFormState,
 } from "@/features/workspaces/actions";
 import type { ApiWorkspace } from "@/lib/api/server";
 
 type WorkspaceManagementProps = {
+  currentUser: {
+    email: string;
+    name: string;
+  };
   error?: string;
   initialPanelMode: "details" | "ai" | "create";
   initialWorkspaceId?: string;
@@ -71,6 +80,7 @@ type WorkspaceManagementProps = {
 };
 
 export function WorkspaceManagement({
+  currentUser,
   error,
   initialPanelMode,
   initialWorkspaceId,
@@ -86,26 +96,54 @@ export function WorkspaceManagement({
     initialPanelMode === "create" ? "create" : "idle",
   );
   const [query, setQuery] = useState("");
+  const [sortMode, setSortMode] = useState<"newest" | "oldest">("newest");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [openedAtByWorkspaceId, setOpenedAtByWorkspaceId] = useState<
+    Record<string, string>
+  >({});
   const selectedWorkspace = useMemo(
-    () =>
-      selectedWorkspaceId
-        ? workspaces.find((workspace) => workspace.id === selectedWorkspaceId)
-        : undefined,
-    [selectedWorkspaceId, workspaces],
+    () => {
+      const workspace = selectedWorkspaceId
+        ? workspaces.find((item) => item.id === selectedWorkspaceId)
+        : undefined;
+
+      if (!workspace) return undefined;
+
+      return {
+        ...workspace,
+        updated_at:
+          openedAtByWorkspaceId[workspace.id] ?? workspace.updated_at,
+      };
+    },
+    [openedAtByWorkspaceId, selectedWorkspaceId, workspaces],
   );
   const filteredWorkspaces = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
-    if (!needle) return workspaces;
+    const matches = !needle
+      ? workspaces
+      : workspaces.filter(
+          (workspace) =>
+            workspace.name.toLowerCase().includes(needle) ||
+            workspace.slug.toLowerCase().includes(needle),
+        );
 
-    return workspaces.filter(
-      (workspace) =>
-        workspace.name.toLowerCase().includes(needle) ||
-        workspace.slug.toLowerCase().includes(needle),
-    );
-  }, [query, workspaces]);
+    return [...matches].sort((left, right) => {
+      const leftCreatedAt = new Date(left.created_at).getTime();
+      const rightCreatedAt = new Date(right.created_at).getTime();
+
+      return sortMode === "newest"
+        ? rightCreatedAt - leftCreatedAt
+        : leftCreatedAt - rightCreatedAt;
+    });
+  }, [query, sortMode, workspaces]);
 
   function selectWorkspace(workspaceId: string) {
+    setOpenedAtByWorkspaceId((current) => ({
+      ...current,
+      [workspaceId]: new Date().toISOString(),
+    }));
+    void markWorkspaceOpened(workspaceId);
     setSelectedWorkspaceId(workspaceId);
     setPanelMode("details");
     setPanelIntent("idle");
@@ -144,14 +182,16 @@ export function WorkspaceManagement({
 
   return (
     <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_420px]">
-      <section>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <section className="min-w-0">
+        <div className="shrink-0">
+          <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[34px] font-semibold leading-tight tracking-tight">
-              Manage workspaces
+            <h1 className="text-[36px] font-semibold leading-tight tracking-tight text-[#030712]">
+              Workspaces
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[#64748B]">
-              Create, switch, and organize the team spaces you use in Relay.
+              Switch between the spaces you own, or create a new one for a team
+              or project.
             </p>
           </div>
           <Button
@@ -162,28 +202,59 @@ export function WorkspaceManagement({
             <Plus className="size-4" />
             New workspace
           </Button>
+          </div>
         </div>
 
         <div className="mt-12">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Your workspaces</h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <Label className="relative block w-[280px] max-w-full">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Label className="relative block w-[320px] max-w-full">
                 <span className="sr-only">Search workspaces</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#94A3B8]" />
                 <Input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search workspaces..."
-                  className="h-10 rounded-[0.8rem] border-[#E4E4E7] pl-9"
+                  className="h-11 rounded-[0.8rem] border-[#E4E4E7] bg-white pl-9 shadow-none focus-visible:border-[#007AFF]/45 focus-visible:ring-2 focus-visible:ring-[#007AFF]/12"
                 />
-              </Label>
-              <div className="flex items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
+            </Label>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex h-11 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setSortMode("newest")}
+                  className={`h-9 rounded-[0.6rem] px-4 text-sm font-semibold ${
+                    sortMode === "newest"
+                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                      : "text-[#64748B] hover:bg-[#F8FAFC]"
+                  }`}
+                >
+                  Newest
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setSortMode("oldest")}
+                  className={`h-9 rounded-[0.6rem] px-4 text-sm font-semibold ${
+                    sortMode === "oldest"
+                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                      : "text-[#64748B] hover:bg-[#F8FAFC]"
+                  }`}
+                >
+                  Oldest
+                </Button>
+              </div>
+              <div className="flex h-11 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white p-1">
                 <Button
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="size-8 rounded-[0.6rem] bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                  onClick={() => setViewMode("grid")}
+                  className={`size-9 rounded-[0.6rem] ${
+                    viewMode === "grid"
+                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                      : "text-[#64748B] hover:bg-[#F8FAFC]"
+                  }`}
                   aria-label="Grid view"
                 >
                   <Grid2X2 className="size-4" />
@@ -192,7 +263,12 @@ export function WorkspaceManagement({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="size-8 rounded-[0.6rem] text-[#64748B]"
+                  onClick={() => setViewMode("list")}
+                  className={`size-9 rounded-[0.6rem] ${
+                    viewMode === "list"
+                      ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
+                      : "text-[#64748B] hover:bg-[#F8FAFC]"
+                  }`}
                   aria-label="List view"
                 >
                   <List className="size-4" />
@@ -207,79 +283,96 @@ export function WorkspaceManagement({
             </p>
           ) : null}
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredWorkspaces.length > 0 ? (
-              filteredWorkspaces.map((workspace) => (
+          <div className="app-content-scrollbar mt-6 h-[720px] max-h-[720px] overflow-y-auto overflow-x-hidden pr-2">
+            <div
+              className={`grid gap-4 ${
+                viewMode === "grid"
+                  ? "md:grid-cols-2 2xl:grid-cols-3"
+                  : "grid-cols-1"
+              }`}
+            >
+              {filteredWorkspaces.length > 0 ? (
+                filteredWorkspaces.map((workspace) => (
                 <WorkspaceCard
                   key={workspace.id}
                   onSelect={() => selectWorkspace(workspace.id)}
                   selected={workspace.id === selectedWorkspace?.id}
                   workspace={workspace}
+                  viewMode={viewMode}
                 />
-              ))
-            ) : (
-              <div className="rounded-[0.95rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5">
-                <Plus className="size-5 text-[#94A3B8]" />
-                <h3 className="mt-4 text-sm font-semibold">
-                  {workspaces.length === 0
-                    ? "No workspaces yet"
-                    : "No matching workspaces"}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-[#64748B]">
-                  {workspaces.length === 0
-                    ? "Use the new workspace button to create your first workspace."
-                    : "Try another name or URL."}
-                </p>
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="rounded-[0.95rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5">
+                  <Plus className="size-5 text-[#94A3B8]" />
+                  <h3 className="mt-4 text-sm font-semibold">
+                    {workspaces.length === 0
+                      ? "No workspaces yet"
+                      : "No matching workspaces"}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[#64748B]">
+                    {workspaces.length === 0
+                      ? "Use the new workspace button to create your first workspace."
+                      : "Try another name or URL."}
+                  </p>
+                </div>
+              )}
+            </div>
+            {filteredWorkspaces.length > 0 ? (
+              <p className="py-8 text-center text-sm font-medium text-[#64748B]">
+                You&apos;ve reached the end.
+              </p>
+            ) : null}
           </div>
         </div>
       </section>
 
-      <section className="sticky top-6 min-h-[360px] rounded-[1.15rem] border border-[#E4E4E7] bg-white p-6 shadow-[0_18px_54px_-44px_rgba(15,23,42,0.55)]">
-        {selectedWorkspace ? (
-          <WorkspaceInspector
-            mode={panelMode}
-            onClose={closePanel}
-            onModeChange={changePanelMode}
-            workspace={selectedWorkspace}
-          />
-        ) : panelIntent === "create" ? (
-          <>
-            <div className="mb-4 flex items-start justify-between gap-3">
+      <section className="sticky top-6 min-h-[360px]">
+        <div className="bg-white p-6">
+          {selectedWorkspace ? (
+            <WorkspaceInspector
+              currentUser={currentUser}
+              mode={panelMode}
+              onClose={closePanel}
+              onModeChange={changePanelMode}
+              workspace={selectedWorkspace}
+            />
+          ) : panelIntent === "create" ? (
+            <>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Create workspace</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Choose a name and URL. You will start as the workspace owner.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={closePanel}
+                  className="size-8 rounded-[0.7rem] text-[#71717A]"
+                  aria-label="Close create workspace panel"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+              <WorkspaceCreateForm compact redirectTo="/app/workspaces/new" />
+            </>
+          ) : (
+            <div className="grid min-h-[318px] place-items-center text-center">
               <div>
-                <h2 className="text-lg font-semibold">Create workspace</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Choose a name and URL. You will start as the workspace owner.
+                <span className="mx-auto grid size-12 place-items-center rounded-[0.9rem] bg-[#EFF6FF] text-[#007AFF]">
+                  <Grid2X2 className="size-5" />
+                </span>
+                <h2 className="mt-4 text-lg font-semibold">Workspace details</h2>
+                <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-slate-500">
+                  Select a workspace to view details, or use New workspace to
+                  create another one.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={closePanel}
-                className="size-8 rounded-[0.7rem] text-[#71717A]"
-                aria-label="Close create workspace panel"
-              >
-                <X className="size-4" />
-              </Button>
             </div>
-            <WorkspaceCreateForm compact redirectTo="/app/workspaces/new" />
-          </>
-        ) : (
-          <div className="grid min-h-[318px] place-items-center text-center">
-            <div>
-              <span className="mx-auto grid size-12 place-items-center rounded-[0.9rem] bg-[#EFF6FF] text-[#007AFF]">
-                <Grid2X2 className="size-5" />
-              </span>
-              <h2 className="mt-4 text-lg font-semibold">Workspace details</h2>
-              <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-slate-500">
-                Select a workspace to view details, or use New workspace to
-                create another one.
-              </p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </section>
     </div>
   );
@@ -289,52 +382,100 @@ function WorkspaceCard({
   onSelect,
   selected,
   workspace,
+  viewMode,
 }: {
   onSelect: () => void;
   selected: boolean;
   workspace: ApiWorkspace;
+  viewMode: "grid" | "list";
 }) {
-  const createdAt = new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(workspace.created_at));
+  if (viewMode === "list") {
+    return (
+      <article
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect();
+          }
+        }}
+        className={`group relative grid cursor-pointer gap-4 rounded-[0.95rem] border bg-white p-4 shadow-[0_18px_48px_-44px_rgba(15,23,42,0.7)] transition-all hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-[0_24px_54px_-44px_rgba(37,99,235,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93C5FD] md:grid-cols-[minmax(0,1fr)_auto] md:items-center ${
+          selected
+            ? "border-[#93C5FD] bg-[#FBFDFF] ring-2 ring-[#DBEAFE]"
+            : "border-[#E4E4E7]"
+        }`}
+      >
+        <span
+          className={`absolute left-0 top-4 hidden h-[calc(100%-2rem)] w-1 rounded-r-full md:block ${
+            selected ? "bg-[#2563EB]" : "bg-transparent group-hover:bg-[#BFDBFE]"
+          }`}
+        />
+
+        <div className="flex min-w-0 items-center gap-4 pl-0 md:pl-2">
+          <WorkspaceMark name={workspace.name} />
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h3 className="truncate text-base font-semibold text-[#111827]">
+                {workspace.name}
+              </h3>
+              {selected ? <CurrentBadge /> : null}
+            </div>
+            <p className="mt-1 truncate text-sm font-medium text-[#64748B]">
+              /{workspace.slug}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div className="flex items-center gap-4 text-sm font-medium text-[#64748B]">
+            <span className="flex items-center gap-2">
+              <Users className="size-4" />
+              1 member
+            </span>
+            <span className="text-[#CBD5E1]">·</span>
+            <span className="flex items-center gap-2">
+              <FolderKanban className="size-4" />0 projects
+            </span>
+          </div>
+
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
-      className={`rounded-[0.95rem] border bg-white p-4 transition-colors hover:border-[#BFDBFE] ${
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`rounded-[0.95rem] border bg-white p-4.5 transition-colors hover:border-[#BFDBFE] ${
         selected ? "border-[#93C5FD] ring-2 ring-[#DBEAFE]" : "border-[#E4E4E7]"
-      }`}
+      } cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93C5FD]`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={onSelect}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-        >
-          <span className="grid size-11 shrink-0 place-items-center rounded-[0.75rem] bg-[#007AFF] text-sm font-semibold text-white">
-            {getWorkspaceInitials(workspace.name)}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-base font-semibold">
+      <div className="flex min-w-0 items-start gap-4 text-left">
+        <WorkspaceMark name={workspace.name} />
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-base font-semibold text-[#111827]">
               {workspace.name}
             </span>
-            <span className="mt-1 block truncate text-sm text-[#64748B]">
-              /{workspace.slug}
-            </span>
+            {selected ? <CurrentBadge /> : null}
           </span>
-        </button>
-        <div className="flex items-center gap-1">
-          {selected ? (
-            <span className="rounded-full bg-[#EFF6FF] px-2 py-1 text-xs font-semibold text-[#007AFF]">
-              Current
-            </span>
-          ) : null}
-          <WorkspaceActions workspace={workspace} />
-        </div>
+          <span className="mt-1 block truncate text-sm font-medium text-[#64748B]">
+            /{workspace.slug}
+          </span>
+        </span>
       </div>
 
-      <div className="mt-6 flex items-center gap-4 border-b border-[#F1F5F9] pb-4 text-sm text-[#64748B]">
+      <div className="mt-5 flex items-center gap-4 border-b border-[#F1F5F9] pb-4 text-sm font-medium text-[#64748B]">
         <span className="flex items-center gap-2">
           <Users className="size-4" />
           1 member
@@ -345,106 +486,64 @@ function WorkspaceCard({
         </span>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 text-sm font-semibold capitalize text-[#334155]">
-          <span className="grid size-7 place-items-center rounded-full bg-[#09090B] text-[11px] text-white">
-            {getWorkspaceInitials(workspace.role).slice(0, 1)}
-          </span>
-          {workspace.role}
-        </span>
-        <span className="text-right text-xs font-medium text-[#64748B]">
-          Created
-          <br />
-          {createdAt}
-        </span>
-      </div>
-
-      <div className="mt-5 flex gap-3">
-        <Button
-          asChild
-          variant="secondary"
-          className="h-10 flex-1 rounded-[0.8rem] bg-[#F5F8FF] text-[#007AFF] hover:bg-[#EFF6FF]"
-        >
-          <a href={`/app?workspace=${workspace.id}`}>Open workspace</a>
-        </Button>
-        <WorkspaceActions workspace={workspace} compact />
-      </div>
     </article>
   );
 }
 
-function WorkspaceActions({
-  compact = false,
-  workspace,
-}: {
-  compact?: boolean;
-  workspace: ApiWorkspace;
-}) {
+function CurrentBadge() {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size={compact ? "icon" : "icon-sm"}
-          className={
-            compact
-              ? "h-10 w-12 rounded-[0.8rem] border-[#E4E4E7]"
-              : "rounded-[0.7rem] border-[#E4E4E7]"
-          }
-          aria-label={`Manage ${workspace.name}`}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <MoreHorizontal className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem asChild className="cursor-pointer">
-          <a href={`/app?workspace=${workspace.id}`}>
-            Open workspace
-          </a>
-        </DropdownMenuItem>
-        <WorkspaceEditDialog workspace={workspace}>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onSelect={(event) => event.preventDefault()}
-          >
-            <Edit3 className="size-4" />
-            Edit workspace
-          </DropdownMenuItem>
-        </WorkspaceEditDialog>
-        <DropdownMenuSeparator />
-        <WorkspaceDeleteDialog workspace={workspace}>
-          <DropdownMenuItem
-            variant="destructive"
-            className="cursor-pointer"
-            onSelect={(event) => event.preventDefault()}
-          >
-            <Trash2 className="size-4" />
-            Delete workspace
-          </DropdownMenuItem>
-        </WorkspaceDeleteDialog>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <span className="shrink-0 rounded-full bg-[#EFF6FF] px-2.5 py-1 text-xs font-semibold text-[#2563EB]">
+      Current
+    </span>
+  );
+}
+
+function WorkspaceMark({ name }: { name: string }) {
+  return (
+    <span
+      className={`grid size-11 shrink-0 place-items-center rounded-[0.75rem] text-sm font-semibold text-white ${getWorkspaceColor(
+        name,
+      )}`}
+    >
+      {getWorkspaceInitials(name)}
+    </span>
   );
 }
 
 function WorkspaceInspector({
-  mode,
+  currentUser,
   onClose,
-  onModeChange,
   workspace,
 }: {
+  currentUser: {
+    email: string;
+    name: string;
+  };
   mode: "details" | "ai";
   onClose: () => void;
   onModeChange: (mode: "details" | "ai") => void;
   workspace: ApiWorkspace;
 }) {
+  const lastOpened = getRelativeWorkspaceTime(workspace.updated_at);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Workspace details</h2>
+        <div className="flex min-w-0 items-start gap-4">
+          <WorkspaceMark name={workspace.name} />
+          <div className="min-w-0">
+            <h2 className="truncate text-2xl font-semibold tracking-tight">
+              {workspace.name}
+            </h2>
+            <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-[#22C55E]">
+              <span className="size-2 rounded-full bg-[#22C55E]" />
+              Current workspace
+            </div>
+            <p className="mt-2 flex items-center gap-2 truncate text-sm font-medium text-slate-500">
+              /{workspace.slug}
+              <Copy className="size-4 shrink-0 text-[#94A3B8]" />
+            </p>
+          </div>
         </div>
         <Button
           type="button"
@@ -458,132 +557,164 @@ function WorkspaceInspector({
         </Button>
       </div>
 
-      <div className="mt-7 flex items-center gap-4">
-        <span className="grid size-14 shrink-0 place-items-center rounded-[0.9rem] bg-[#007AFF] text-lg font-semibold text-white">
-          {getWorkspaceInitials(workspace.name)}
-        </span>
-        <div className="min-w-0">
-          <h3 className="truncate text-2xl font-semibold tracking-tight">
-            {workspace.name}
-          </h3>
-          <p className="mt-1 truncate text-sm text-slate-500">
-            /{workspace.slug}
+      <div className="mt-8 space-y-6">
+        <div className="rounded-[0.9rem] border border-[#E4E4E7] bg-white px-4">
+          <ContextRow icon={Users} label="Your role" value={capitalize(workspace.role)} />
+          <ContextRow icon={Users} label="Members" value="1" />
+          <ContextRow icon={FolderKanban} label="Projects" value="0" />
+          <ContextRow
+            icon={CalendarDays}
+            label="Created"
+            value={formatDate(workspace.created_at)}
+          />
+          <ContextRow icon={Clock3} label="Last opened" value={lastOpened} />
+        </div>
+
+        <div>
+          <h3 className="text-base font-semibold">About this workspace</h3>
+          <p className="mt-3 text-sm leading-6 text-[#64748B]">
+            This is your current workspace. Manage projects, tasks, and
+            collaborate with your team.
           </p>
         </div>
-      </div>
 
-      <div className="mt-7 grid grid-cols-2 rounded-xl bg-zinc-50 p-1 text-sm font-medium">
         <Button
-          type="button"
-          variant="ghost"
-          onClick={() => onModeChange("details")}
-          className={`h-8 rounded-lg ${mode === "details" ? "bg-white shadow-sm hover:bg-white" : "hover:bg-zinc-100"}`}
+          asChild
+          className="h-11 w-full rounded-[0.8rem] bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
         >
-          Details
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => onModeChange("ai")}
-          className={`h-8 rounded-lg ${mode === "ai" ? "bg-white shadow-sm hover:bg-white" : "hover:bg-zinc-100"}`}
-        >
-          AI
-        </Button>
-      </div>
-
-      {mode === "ai" ? (
-        <div className="mt-6 rounded-xl bg-zinc-50 p-4">
-          <div className="flex items-center gap-2">
-            <Bot className="size-4 text-[#007AFF]" />
-            <p className="text-sm font-semibold">Ask Relay about this</p>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
-            Soon, Relay will summarize workspace activity, find blockers, and
-            draft updates from projects, tasks, comments, and files.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-7 space-y-6">
-          <div className="grid gap-2">
-            <ContextRow
-              icon={Users}
-              label="Your role"
-              value={capitalize(workspace.role)}
-            />
-            <ContextRow icon={FolderKanban} label="Projects" value="0" />
-            <ContextRow icon={Users} label="Members" value="1" />
-            <ContextRow
-              icon={CalendarDays}
-              label="Created"
-              value={formatDate(workspace.created_at)}
-            />
-          </div>
-
-          <Button
-            asChild
-            className="h-11 w-full rounded-[0.8rem] bg-[#007AFF] text-white hover:bg-[#006be0]"
+          <a
+            href={`/app?workspace=${workspace.id}`}
+            onClick={() => {
+              void markWorkspaceOpened(workspace.id);
+            }}
           >
-            <a href={`/app?workspace=${workspace.id}`}>
-              Open workspace
-            </a>
-          </Button>
+            Open workspace
+            <ExternalLink className="size-4" />
+          </a>
+        </Button>
 
-          <div>
-            <h3 className="text-base font-semibold">Manage</h3>
-            <div className="mt-3 space-y-3">
-              <WorkspaceEditDialog workspace={workspace}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 w-full justify-start rounded-[0.8rem]"
-                >
-                  <Settings className="size-4" />
-                  Workspace settings
-                </Button>
-              </WorkspaceEditDialog>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 w-full justify-start rounded-[0.8rem]"
-              >
-                <Users className="size-4" />
-                Invite members
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 w-full justify-start rounded-[0.8rem]"
-              >
-                <FolderKanban className="size-4" />
-                Create project
-              </Button>
-              <WorkspaceDeleteDialog workspace={workspace}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 w-full justify-start rounded-[0.8rem] border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                  <Trash2 className="size-4" />
-                  Delete workspace
-                </Button>
-              </WorkspaceDeleteDialog>
-            </div>
+        <div className="space-y-3">
+          <WorkspaceEditDialog currentUser={currentUser} workspace={workspace}>
+            <InspectorAction icon={Settings} label="Workspace settings" />
+          </WorkspaceEditDialog>
+        </div>
+
+        <div>
+          <h3 className="text-base font-semibold">Manage</h3>
+          <div className="mt-3 space-y-3">
+            <InviteMembersDialog workspace={workspace}>
+              <InspectorAction icon={Users} label="Invite members" />
+            </InviteMembersDialog>
+            <CreateProjectDialog workspace={workspace}>
+              <InspectorAction icon={FolderPlus} label="Create project" />
+            </CreateProjectDialog>
+            <WorkspaceDeleteDialog workspace={workspace}>
+              <InspectorAction destructive icon={Trash2} label="Delete workspace" />
+            </WorkspaceDeleteDialog>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-const editInitialState: WorkspaceFormState = {
-  message: null,
-};
-
-function WorkspaceEditDialog({
+function InviteMembersDialog({
   children,
   workspace,
 }: {
   children: ReactNode;
+  workspace: ApiWorkspace;
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite members</DialogTitle>
+          <DialogDescription>
+            Prepare an invite for {workspace.name}. Member invitations will be
+            sent once the team invite endpoint is available.
+          </DialogDescription>
+        </DialogHeader>
+        <form className="space-y-4">
+          <Label htmlFor={`invite-email-${workspace.id}`} className="space-y-2">
+            <span className="text-sm font-semibold text-[#334155]">
+              Email address
+            </span>
+            <Input
+              id={`invite-email-${workspace.id}`}
+              type="email"
+              placeholder="teammate@example.com"
+              className="h-10 rounded-[0.8rem]"
+            />
+          </Label>
+          <Button
+            type="button"
+            disabled
+            className="h-10 w-full rounded-[0.8rem]"
+          >
+            <Mail className="size-4" />
+            Send invite
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CreateProjectDialog({
+  children,
+  workspace,
+}: {
+  children: ReactNode;
+  workspace: ApiWorkspace;
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create project</DialogTitle>
+          <DialogDescription>
+            Start a project inside {workspace.name}. Project creation will be
+            connected when the projects API lands.
+          </DialogDescription>
+        </DialogHeader>
+        <form className="space-y-4">
+          <Label htmlFor={`project-name-${workspace.id}`} className="space-y-2">
+            <span className="text-sm font-semibold text-[#334155]">
+              Project name
+            </span>
+            <Input
+              id={`project-name-${workspace.id}`}
+              placeholder="Website launch"
+              className="h-10 rounded-[0.8rem]"
+            />
+          </Label>
+          <Button
+            type="button"
+            disabled
+            className="h-10 w-full rounded-[0.8rem]"
+          >
+            <FolderPlus className="size-4" />
+            Create project
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WorkspaceEditDialog({
+  children,
+  currentUser,
+  workspace,
+}: {
+  children: ReactNode;
+  currentUser?: {
+    email: string;
+    name: string;
+  };
   workspace: ApiWorkspace;
 }) {
   const canEdit = workspace.role === "owner" || workspace.role === "admin";
@@ -591,115 +722,349 @@ function WorkspaceEditDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit workspace</DialogTitle>
+      <DialogContent className="gap-0 overflow-hidden rounded-[1rem] p-0 sm:max-w-none md:w-[860px]">
+        <DialogHeader className="sr-only">
+          <DialogTitle>
+            Workspace settings
+          </DialogTitle>
           <DialogDescription>
-            Update the workspace name and URL used across Relay.
+            Manage access and workspace identity.
           </DialogDescription>
         </DialogHeader>
-        <WorkspaceEditForm canEdit={canEdit} workspace={workspace} />
+        <WorkspaceSettingsPanel
+          canEdit={canEdit}
+          currentUser={
+            currentUser ?? {
+              email: "Unknown email",
+              name: "Current user",
+            }
+          }
+          workspace={workspace}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-function WorkspaceEditForm({
+function WorkspaceSettingsPanel({
   canEdit,
+  currentUser,
   workspace,
 }: {
   canEdit: boolean;
+  currentUser: {
+    email: string;
+    name: string;
+  };
   workspace: ApiWorkspace;
 }) {
-  const [state, formAction] = useActionState(updateWorkspace, editInitialState);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(workspace.name);
   const [slug, setSlug] = useState(workspace.slug);
-  const nameError = state.fieldErrors?.name?.[0];
-  const slugError = state.fieldErrors?.slug?.[0];
+  const [lastSavedName, setLastSavedName] = useState(workspace.name);
+  const [lastSavedSlug, setLastSavedSlug] = useState(workspace.slug);
+  const [error, setError] = useState<string | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setName(workspace.name);
-    setSlug(workspace.slug);
-  }, [workspace.id, workspace.name, workspace.slug]);
+    if (!canEdit || !autoSaveEnabled) return;
+
+    const nextName = name.trim();
+    const nextSlug = slug.trim();
+    if (nextName === lastSavedName && nextSlug === lastSavedSlug) return;
+
+    const timeout = window.setTimeout(() => {
+      startTransition(async () => {
+        const result = await updateWorkspaceIdentity(
+          workspace.id,
+          nextName,
+          nextSlug,
+        );
+
+        if (result.message) {
+          setError(
+            result.fieldErrors?.name?.[0] ??
+              result.fieldErrors?.slug?.[0] ??
+              result.message,
+          );
+          return;
+        }
+
+        setError(null);
+        setLastSavedName(nextName);
+        setLastSavedSlug(nextSlug);
+        router.refresh();
+      });
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    autoSaveEnabled,
+    canEdit,
+    lastSavedName,
+    lastSavedSlug,
+    name,
+    router,
+    slug,
+    workspace.id,
+  ]);
+
+  const saveLabel =
+    isPending
+      ? "Saving"
+      : name.trim() === lastSavedName && slug.trim() === lastSavedSlug
+        ? "Saved"
+        : autoSaveEnabled
+          ? "Editing"
+          : "Unsaved";
+  const workspaceUrl = `relay.app/${slug}`;
+
+  async function copyWorkspaceUrl() {
+    await navigator.clipboard.writeText(workspaceUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
 
   return (
-    <form action={formAction} className="space-y-4">
-      <input type="hidden" name="workspaceId" value={workspace.id} />
-      <Label htmlFor={`workspace-name-${workspace.id}`} className="space-y-2">
-        <span className="text-sm font-semibold text-[#334155]">
-          Workspace name
-        </span>
-        <Input
-          id={`workspace-name-${workspace.id}`}
-          name="name"
-          value={name}
-          disabled={!canEdit}
-          onChange={(event) => {
-            setName(event.target.value);
-            setSlug(slugifyWorkspaceName(event.target.value));
-          }}
-          aria-invalid={Boolean(nameError)}
-          className="h-10 rounded-[0.8rem]"
-        />
-      </Label>
-      {nameError ? (
-        <p className="text-xs font-medium text-red-600">{nameError}</p>
-      ) : null}
+    <div className="flex max-h-[76vh] min-h-[520px] flex-col bg-white">
+      <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(0,0.92fr)_1px_minmax(340px,0.9fr)]">
+        <aside className="min-h-0 overflow-y-auto p-6">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold tracking-tight text-[#111827]">
+              Workspace settings
+            </h2>
+          </div>
 
-      <Label htmlFor={`workspace-slug-${workspace.id}`} className="space-y-2">
-        <span className="text-sm font-semibold text-[#334155]">
-          Workspace URL
-        </span>
-        <div className="flex min-w-0 items-center rounded-[0.8rem] border border-[#E4E4E7] bg-white focus-within:border-[#007AFF]/45 focus-within:ring-2 focus-within:ring-[#007AFF]/12">
-          <span className="shrink-0 pl-3 text-sm text-[#71717A]">
-            relay.app/
-          </span>
-          <Input
-            id={`workspace-slug-${workspace.id}`}
-            name="slug"
-            value={slug}
-            disabled={!canEdit}
-            onChange={(event) =>
-              setSlug(slugifyWorkspaceName(event.target.value))
-            }
-            aria-invalid={Boolean(slugError)}
-            className="h-10 border-0 bg-transparent pl-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
-          />
-        </div>
-      </Label>
-      {slugError ? (
-        <p className="text-xs font-medium text-red-600">{slugError}</p>
-      ) : null}
+          <div className="mt-9 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-[#111827]">Members</h3>
+              <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-xs font-semibold text-[#64748B]">
+                1
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 rounded-[0.75rem] border-[#E4E4E7] bg-white px-3 text-xs font-semibold"
+            >
+              <UserPlus className="size-3.5" />
+              Invite
+            </Button>
+          </div>
 
-      {state.message ? (
-        <p className="rounded-[0.8rem] bg-red-50 px-3 py-2 text-xs text-red-700">
-          {state.message}
+          <Label className="relative mt-5 block">
+            <span className="sr-only">Search members</span>
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#94A3B8]" />
+            <Input
+              placeholder="Search members..."
+              className="h-10 rounded-[0.75rem] border-[#E4E4E7] bg-white pl-10 text-xs shadow-none"
+            />
+          </Label>
+
+          <div className="mt-5 rounded-[0.9rem] bg-[#F8FAFC] p-3.5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#030712] text-xs font-semibold text-white">
+                  {getWorkspaceInitials(currentUser.name).slice(0, 1)}
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-xs font-semibold text-[#111827]">
+                    <span className="truncate">{currentUser.name}</span>
+                    <span className="rounded-full bg-[#EEF2FF] px-1.5 py-0.5 text-[11px] font-semibold text-[#2563EB]">
+                      You
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs text-[#64748B]">
+                    {currentUser.email}
+                  </span>
+                </span>
+              </div>
+              <button
+                type="button"
+                className="flex shrink-0 items-center gap-1.5 rounded-[0.65rem] px-2 py-1 text-xs font-semibold capitalize text-[#334155] hover:bg-white"
+              >
+                {workspace.role}
+                <ChevronDown className="size-3.5 text-[#64748B]" />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="hidden bg-[#E4E4E7] md:block" />
+
+        <section className="min-h-0 overflow-y-auto p-6">
+          <div className="flex items-start gap-4">
+            <span
+              className={`grid size-12 shrink-0 place-items-center rounded-[0.75rem] text-base font-semibold text-white ${getWorkspaceColor(
+                name,
+              )}`}
+            >
+              {getWorkspaceInitials(name)}
+            </span>
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-semibold tracking-tight text-[#111827]">
+                {name}
+              </h3>
+              <div className="mt-1.5 flex items-center gap-2 text-xs font-semibold text-[#22C55E]">
+                <span className="size-1.5 rounded-full bg-[#22C55E]" />
+                Current workspace
+              </div>
+              <p className="mt-1.5 flex items-center gap-1.5 truncate text-xs font-medium text-[#64748B]">
+                /{slug}
+                <button
+                  type="button"
+                  onClick={copyWorkspaceUrl}
+                  className="rounded-[0.4rem] p-1 text-[#94A3B8] transition-colors hover:bg-[#F1F5F9] hover:text-[#334155]"
+                  aria-label="Copy workspace URL"
+                >
+                  <Copy className="size-3.5 shrink-0" />
+                </button>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-[#E4E4E7] pt-5">
+            <h4 className="text-xs font-semibold text-[#111827]">General</h4>
+
+            <div className="mt-5 space-y-5">
+              <div>
+                <Label
+                  htmlFor={`workspace-name-${workspace.id}`}
+                  className="text-xs font-semibold text-[#334155]"
+                >
+                  Workspace name
+                </Label>
+                <div className="mt-2 flex h-10 items-center rounded-[0.75rem] border border-[#E4E4E7] bg-white focus-within:border-[#007AFF]/45 focus-within:ring-2 focus-within:ring-[#007AFF]/12">
+                  <Input
+                    id={`workspace-name-${workspace.id}`}
+                    name="name"
+                    value={name}
+                    disabled={!canEdit}
+                    onChange={(event) => {
+                      setName(event.target.value);
+                      setSlug(slugifyWorkspaceName(event.target.value));
+                    }}
+                    aria-invalid={Boolean(error)}
+                    className="h-9 flex-1 border-0 bg-transparent text-xs shadow-none focus-visible:ring-0"
+                  />
+                  <span className="mr-3 flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#22C55E]">
+                    {isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Check className="size-3.5" />
+                    )}
+                    {saveLabel}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-[#64748B]">
+                  This is the name of your workspace.
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-[#334155]">
+                  Workspace URL
+                </Label>
+                <div className="mt-2 flex h-10 overflow-hidden rounded-[0.75rem] border border-[#E4E4E7] bg-white">
+                  <span className="grid shrink-0 place-items-center bg-[#F8FAFC] px-3 text-xs font-semibold text-[#64748B]">
+                    relay.app/
+                  </span>
+                  <span className="flex min-w-0 flex-1 items-center px-3 text-xs font-semibold text-[#334155]">
+                    {slug}
+                  </span>
+                  <span className="mr-3 flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#22C55E]">
+                    {copied ? "Copied" : "Saved"}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-[#64748B]">
+                  This is your workspace&apos;s unique URL.
+                </p>
+              </div>
+
+              <div>
+                <h5 className="text-xs font-semibold text-[#334155]">
+                  Workspace icon
+                </h5>
+                <div className="mt-3 flex items-center gap-4">
+                  <span
+                    className={`grid size-10 shrink-0 place-items-center rounded-[0.7rem] text-sm font-semibold text-white ${getWorkspaceColor(
+                      name,
+                    )}`}
+                  >
+                    {getWorkspaceInitials(name)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9 rounded-[0.75rem] border-[#E4E4E7] bg-white px-3 text-xs font-semibold"
+                  >
+                    Change icon
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-[#64748B]">
+                  JPG, PNG or SVG. Max size 2MB.
+                </p>
+              </div>
+
+              {error ? (
+                <p className="rounded-[0.8rem] bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                  {error}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-[#E4E4E7] pt-5">
+            <h4 className="text-xs font-semibold text-[#111827]">
+              Preferences
+            </h4>
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold text-[#334155]">
+                  Automatic name saving
+                </p>
+                <p className="mt-1 text-xs text-[#64748B]">
+                  Save changes to the workspace name automatically.
+                </p>
+              </div>
+              <Switch
+                checked={autoSaveEnabled}
+                onCheckedChange={setAutoSaveEnabled}
+                disabled={!canEdit}
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer className="flex items-center justify-between gap-4 border-t border-[#E4E4E7] px-6 py-4">
+        <p className="flex items-center gap-2 text-xs font-medium text-[#64748B]">
+          <ShieldCheck className="size-3.5" />
+          Only workspace owners can change these settings.
         </p>
-      ) : null}
-
-      <UpdateWorkspaceButton disabled={!canEdit} />
-    </form>
-  );
-}
-
-function UpdateWorkspaceButton({ disabled }: { disabled: boolean }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      disabled={disabled || pending}
-      className="h-10 w-full rounded-[0.8rem] bg-[#18181B] text-white hover:bg-[#27272A]"
-    >
-      {pending ? (
-        <>
-          <Loader2 className="size-4 animate-spin" />
-          Saving
-        </>
-      ) : (
-        "Save changes"
-      )}
-    </Button>
+        <div className="flex items-center gap-3">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 min-w-28 rounded-[0.75rem] border-[#E4E4E7] text-xs font-semibold"
+            >
+              Cancel
+            </Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button
+              type="button"
+              className="h-10 min-w-32 rounded-[0.75rem] bg-[#4F46E5] text-xs font-semibold text-white hover:bg-[#4338CA]"
+            >
+              Done
+            </Button>
+          </DialogClose>
+        </div>
+      </footer>
+    </div>
   );
 }
 
@@ -770,6 +1135,40 @@ function DeleteWorkspaceButton({ disabled }: { disabled: boolean }) {
   );
 }
 
+type InspectorActionProps = ComponentPropsWithoutRef<typeof Button> & {
+  destructive?: boolean;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+};
+
+const InspectorAction = forwardRef<
+  HTMLButtonElement,
+  InspectorActionProps
+>(function InspectorAction(
+  { destructive = false, icon: Icon, label, className = "", ...props },
+  ref,
+) {
+  return (
+    <Button
+      ref={ref}
+      type="button"
+      variant="outline"
+      className={`h-11 w-full justify-between rounded-[0.8rem] border-[#E4E4E7] bg-white px-4 ${
+        destructive
+          ? "text-red-600 hover:bg-red-50 hover:text-red-700"
+          : "text-[#334155] hover:bg-[#F8FAFC]"
+      } ${className}`}
+      {...props}
+    >
+      <span className="flex items-center gap-3">
+        <Icon className="size-4" />
+        {label}
+      </span>
+      <ChevronRight className="size-4 text-[#94A3B8]" />
+    </Button>
+  );
+});
+
 function ContextRow({
   icon: Icon,
   label,
@@ -780,9 +1179,9 @@ function ContextRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-3">
+    <div className="flex items-center justify-between border-b border-[#EEF2F7] py-3.5 last:border-b-0">
       <span className="flex items-center gap-2 text-sm text-slate-500">
-        <Icon className="size-4 text-[#007AFF]" />
+        <Icon className="size-4 text-[#64748B]" />
         {label}
       </span>
       <span className="text-sm font-semibold">{value}</span>
@@ -798,6 +1197,38 @@ function getWorkspaceInitials(name: string) {
     .join("");
 
   return initials.toUpperCase() || "WS";
+}
+
+function getWorkspaceColor(name: string) {
+  const colors = [
+    "bg-[#2563EB]",
+    "bg-[#4F46E5]",
+    "bg-[#F97316]",
+    "bg-[#22C55E]",
+    "bg-[#DB2777]",
+  ];
+  const index = [...name].reduce((sum, character) => {
+    return sum + character.charCodeAt(0);
+  }, 0);
+
+  return colors[index % colors.length];
+}
+
+function getRelativeWorkspaceTime(value: string) {
+  const timestamp = new Date(value).getTime();
+  const now = Date.now();
+  const diffDays = Math.max(
+    0,
+    Math.floor((now - timestamp) / (1000 * 60 * 60 * 24)),
+  );
+
+  if (diffDays === 0) return "Just now";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 14) return "1 week ago";
+  if (diffDays < 31) return `${Math.floor(diffDays / 7)} weeks ago`;
+
+  return formatDate(value);
 }
 
 function slugifyWorkspaceName(value: string) {

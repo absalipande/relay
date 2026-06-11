@@ -18,6 +18,14 @@ export type DeleteWorkspaceState = {
   message: string | null;
 };
 
+export type WorkspaceIdentityUpdateState = {
+  message: string | null;
+  fieldErrors?: {
+    name?: string[];
+    slug?: string[];
+  };
+};
+
 const workspaceSchema = z.object({
   name: z
     .string()
@@ -39,6 +47,11 @@ const workspaceSchema = z.object({
         )
         .optional(),
     ),
+});
+
+const workspaceIdentitySchema = workspaceSchema.pick({
+  name: true,
+  slug: true,
 });
 
 export async function createWorkspace(
@@ -123,6 +136,65 @@ export async function updateWorkspace(
   revalidatePath("/app");
   revalidatePath("/app/workspaces/new");
   redirect(`/app/workspaces/new?workspace=${workspaceId}&panel=details`);
+}
+
+export async function updateWorkspaceIdentity(
+  workspaceId: string,
+  name: string,
+  slug: string,
+): Promise<WorkspaceIdentityUpdateState> {
+  if (workspaceId.length === 0) {
+    return { message: "Choose a workspace to update." };
+  }
+
+  const parsed = workspaceIdentitySchema.safeParse({ name, slug });
+
+  if (!parsed.success) {
+    return {
+      message: "Check the workspace name and try again.",
+      fieldErrors: z.flattenError(parsed.error).fieldErrors,
+    };
+  }
+
+  const { error } = await apiFetch<{ workspace: unknown }>(
+    `/workspaces/${workspaceId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+      }),
+    },
+  );
+
+  if (error) {
+    return { message: error };
+  }
+
+  revalidatePath("/app");
+  revalidatePath("/app/workspaces/new");
+  return { message: null };
+}
+
+export async function markWorkspaceOpened(workspaceId: string) {
+  if (workspaceId.length === 0) {
+    return { message: "Choose a workspace to open." };
+  }
+
+  const { error } = await apiFetch<{ workspace: unknown }>(
+    `/workspaces/${workspaceId}/opened`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (error) {
+    return { message: error };
+  }
+
+  revalidatePath("/app");
+  revalidatePath("/app/workspaces/new");
+  return { message: null };
 }
 
 export async function deleteWorkspace(

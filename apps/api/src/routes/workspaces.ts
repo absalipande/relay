@@ -177,6 +177,33 @@ export async function workspaceRoutes(app: FastifyInstance) {
     },
   );
 
+  app.post(
+    "/workspaces/:workspaceId/opened",
+    {
+      preHandler: [app.requireWorkspaceMember],
+    },
+    async (request, reply) => {
+      if (!app.supabase || !request.user) {
+        return reply.code(503).send({ error: "Supabase is not configured." });
+      }
+
+      const { workspaceId } = request.params as { workspaceId: string };
+      const { data, error } = await app.supabase
+        .from("workspaces")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", workspaceId)
+        .select("id, name, slug, created_at, updated_at")
+        .single();
+
+      if (error) {
+        request.log.error({ error }, "Could not mark workspace as opened");
+        return reply.code(500).send({ error: error.message });
+      }
+
+      return { workspace: data };
+    },
+  );
+
   app.patch(
     "/workspaces/:workspaceId",
     {

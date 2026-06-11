@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 export type AuthMode = "sign-in" | "sign-up";
 
 const authSchema = z.object({
+  fullName: z.string().optional(),
   email: z.email("Enter a valid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
 });
@@ -36,9 +37,11 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
     formState: { errors },
     handleSubmit,
     register,
+    setError,
   } = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
     defaultValues: {
+      fullName: "",
       email: "",
       password: "",
     },
@@ -48,10 +51,32 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
     setIsLoading(true);
     setMessage(null);
 
+    const fullName = values.fullName?.trim();
+
+    if (mode === "sign-up" && (!fullName || fullName.length < 2)) {
+      setIsLoading(false);
+      setError("fullName", {
+        message: "Enter your full name.",
+        type: "manual",
+      });
+      return;
+    }
+
     const authCall =
       mode === "sign-in"
-        ? supabase.auth.signInWithPassword(values)
-        : supabase.auth.signUp(values);
+        ? supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password,
+          })
+        : supabase.auth.signUp({
+            email: values.email,
+            password: values.password,
+            options: {
+              data: {
+                full_name: fullName,
+              },
+            },
+          });
 
     const { error } = await authCall;
 
@@ -98,6 +123,29 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {mode === "sign-up" ? (
+        <Label className="block space-y-3">
+          <span className="block text-sm font-semibold text-slate-800">
+            Full name
+          </span>
+          <span className="mt-1.5 flex h-12 items-center gap-4 rounded-lg border border-[#E8EEF7] bg-white px-4 shadow-sm shadow-slate-900/[0.01] focus-within:border-[#007AFF] focus-within:ring-4 focus-within:ring-blue-50">
+            <UserIcon />
+            <Input
+              type="text"
+              placeholder="Your name"
+              autoComplete="name"
+              {...register("fullName")}
+              className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-base leading-none text-slate-950 caret-[#007AFF] shadow-none outline-none selection:bg-blue-100 placeholder:text-slate-400 focus-visible:border-transparent focus-visible:ring-0"
+            />
+          </span>
+          {errors.fullName ? (
+            <span className="mt-1 block text-xs font-medium text-red-600">
+              {errors.fullName.message}
+            </span>
+          ) : null}
+        </Label>
+      ) : null}
 
       <Label className="block space-y-3">
         <span className="block text-sm font-semibold text-slate-800">
@@ -241,6 +289,31 @@ function MailIcon() {
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0 text-slate-400"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <path
+        d="M12 12.25a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.75 19.25a6.25 6.25 0 0 1 12.5 0"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
       />
     </svg>
   );

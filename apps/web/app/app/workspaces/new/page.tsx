@@ -36,6 +36,12 @@ export default async function NewWorkspacePage({
     params.panel === "ai" || params.panel === "create"
       ? params.panel
       : "details";
+  const currentUserName =
+    getMetadataString(user.user_metadata?.full_name) ??
+    getMetadataString(user.user_metadata?.name) ??
+    getMetadataString(user.user_metadata?.display_name) ??
+    user.email ??
+    "Current user";
 
   return (
     <RelayAppShell
@@ -45,6 +51,10 @@ export default async function NewWorkspacePage({
     >
       <div className="mx-auto min-h-full w-full max-w-[1380px] py-10">
         <WorkspaceManagement
+          currentUser={{
+            email: user.email ?? "Unknown email",
+            name: currentUserName,
+          }}
           error={error ?? undefined}
           initialPanelMode={panelMode}
           initialWorkspaceId={selectedWorkspace?.id}
@@ -53,4 +63,10 @@ export default async function NewWorkspacePage({
       </div>
     </RelayAppShell>
   );
+}
+
+function getMetadataString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null;
 }
