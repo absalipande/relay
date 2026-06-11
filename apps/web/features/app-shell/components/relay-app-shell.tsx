@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Bell,
   Building2,
@@ -15,9 +17,11 @@ import {
   Search,
   Settings,
   Timer,
+  User,
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,17 +33,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { signOut } from "@/features/workspaces/actions";
+import { WorkspaceContextPanel } from "@/features/workspaces/components/workspace-context-panel";
 
 type RelayAppShellProps = {
   activeNav?: NavKey;
   children: React.ReactNode;
   context?: React.ReactNode;
+  displayName?: string;
   email: string;
   hasWorkspace?: boolean;
+  pageTitle?: string;
+  workspaces?: ShellWorkspace[];
   workspaceName?: string;
 };
 
-type NavKey = "overview";
+type NavKey = "overview" | "settings";
+
+type ShellWorkspace = {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+  role: string;
+};
 
 type NavItemConfig = {
   label: string;
@@ -63,24 +79,47 @@ const secondaryNav: NavItemConfig[] = [
   { label: "Team", href: "/app", icon: Users },
   { label: "Clients", href: "/app", icon: Building2 },
   { label: "Files", href: "/app", icon: FileText },
-  { label: "Settings", href: "/app", icon: Settings },
+  {
+    label: "Settings",
+    href: "/app/account/settings",
+    icon: Settings,
+    navKey: "settings",
+  },
 ];
 
 export function RelayAppShell({
   activeNav,
   children,
   context,
+  displayName,
   email,
   hasWorkspace = false,
+  pageTitle,
+  workspaces = [],
   workspaceName,
 }: RelayAppShellProps) {
-  const hasContext = Boolean(context);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const resolvedActiveNav = activeNav ?? getActiveNav(pathname);
+  const resolvedPageTitle = pageTitle ?? getPageTitle(pathname);
+  const selectedWorkspaceId = searchParams.get("workspace");
+  const selectedWorkspace = selectedWorkspaceId
+    ? workspaces.find((workspace) => workspace.id === selectedWorkspaceId)
+    : undefined;
+  const panelMode = searchParams.get("panel") === "ai" ? "ai" : "details";
+  const resolvedContext =
+    context ??
+    (selectedWorkspace && pathname === "/app" ? (
+      <WorkspaceContextPanel workspace={selectedWorkspace} mode={panelMode} />
+    ) : undefined);
+  const hasContext = Boolean(resolvedContext);
   const displayedWorkspaceName = hasWorkspace
-    ? (workspaceName ?? "Workspace")
+    ? (selectedWorkspace?.name ?? workspaceName ?? "Workspace")
     : "No workspace selected";
   const workspaceInitials = hasWorkspace
     ? displayedWorkspaceName.slice(0, 2).toUpperCase()
     : "--";
+  const accountName = displayName ?? email;
 
   return (
     <main className="h-[var(--relay-app-height)] overflow-hidden bg-white text-[#111111]">
@@ -153,7 +192,7 @@ export function RelayAppShell({
                 item.label === "Overview"
                   ? {
                       ...item,
-                      active: item.navKey === activeNav,
+                      active: item.navKey === resolvedActiveNav,
                     }
                   : { ...item, disabled: !hasWorkspace },
               )}
@@ -162,7 +201,8 @@ export function RelayAppShell({
               label="Workspace"
               items={secondaryNav.map((item) => ({
                 ...item,
-                disabled: !hasWorkspace,
+                active: item.navKey === resolvedActiveNav,
+                disabled: !hasWorkspace && item.navKey !== "settings",
               }))}
               separated
             />
@@ -203,11 +243,11 @@ export function RelayAppShell({
 
             <div className="flex items-center gap-3 rounded-[0.95rem] border border-[#E4E4E7] bg-white p-3 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#030712] text-sm font-semibold text-white">
-                {getInitial(email)}
+                {getInitial(accountName)}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[0.86rem] font-semibold leading-5">
-                  {email}
+                  {accountName}
                 </span>
                 <span className="block text-[0.78rem] leading-4 text-[#71717A]">
                   Signed in
@@ -231,18 +271,30 @@ export function RelayAppShell({
                 >
                   <DropdownMenuLabel className="px-2 py-1.5">
                     <span className="block truncate text-[0.78rem] font-semibold text-[#111111]">
-                      {email}
+                      {accountName}
                     </span>
-                    <span className="block text-[0.7rem] font-medium text-[#71717A]">
-                      Relay account
+                    <span className="block truncate text-[0.7rem] font-medium text-[#71717A]">
+                      {email}
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-[#E4E4E7]" />
-                  <DropdownMenuItem className="rounded-[0.65rem] px-2 py-1.5 text-[0.82rem]">
-                    Profile
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-[0.65rem] px-2 py-1.5 text-[0.82rem]"
+                  >
+                    <Link href="/app/profile">
+                      <User className="size-3.5" />
+                      Profile
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="rounded-[0.65rem] px-2 py-1.5 text-[0.82rem]">
-                    Account settings
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-[0.65rem] px-2 py-1.5 text-[0.82rem]"
+                  >
+                    <Link href="/app/account/settings">
+                      <Settings className="size-3.5" />
+                      Account settings
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-[#E4E4E7]" />
                   <DropdownMenuItem
@@ -283,7 +335,7 @@ export function RelayAppShell({
                   /
                 </span>
                 <span className="truncate text-[0.9rem] font-medium tracking-[-0.01em] text-[#52525B]">
-                  Workspace Overview
+                  {resolvedPageTitle}
                 </span>
               </div>
 
@@ -327,7 +379,7 @@ export function RelayAppShell({
 
         {hasContext ? (
           <aside className="sticky top-0 hidden h-[var(--relay-app-height)] overflow-y-auto bg-white px-6 py-6 [scrollbar-width:none] xl:flex xl:h-full xl:flex-col [&::-webkit-scrollbar]:hidden">
-            {context}
+            {resolvedContext}
           </aside>
         ) : null}
       </div>
@@ -402,4 +454,32 @@ function NavItem({
 
 function getInitial(email: string) {
   return email.trim().charAt(0).toUpperCase() || "R";
+}
+
+function getActiveNav(pathname: string): NavKey | undefined {
+  if (pathname.startsWith("/app/account/settings")) {
+    return "settings";
+  }
+
+  if (pathname === "/app") {
+    return "overview";
+  }
+
+  return undefined;
+}
+
+function getPageTitle(pathname: string) {
+  if (pathname.startsWith("/app/account/settings")) {
+    return "Account Settings";
+  }
+
+  if (pathname.startsWith("/app/profile")) {
+    return "Profile";
+  }
+
+  if (pathname.startsWith("/app/workspaces/new")) {
+    return "Workspaces";
+  }
+
+  return "Workspace Overview";
 }

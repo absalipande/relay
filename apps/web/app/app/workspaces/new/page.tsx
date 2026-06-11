@@ -1,4 +1,3 @@
-import { RelayAppShell } from "@/features/app-shell/components/relay-app-shell";
 import { WorkspaceManagement } from "@/features/workspaces/components/workspace-management";
 import { apiFetch, type ApiWorkspace } from "@/lib/api/server";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +27,6 @@ export default async function NewWorkspacePage({
     "/workspaces",
   );
   const workspaces = data?.workspaces ?? [];
-  const activeWorkspace = workspaces[0];
   const selectedWorkspace = params.workspace
     ? workspaces.find((workspace) => workspace.id === params.workspace)
     : undefined;
@@ -44,24 +42,18 @@ export default async function NewWorkspacePage({
     "Current user";
 
   return (
-    <RelayAppShell
-      email={user.email ?? "Unknown user"}
-      hasWorkspace={workspaces.length > 0}
-      workspaceName={activeWorkspace?.name}
-    >
-      <div className="mx-auto min-h-full w-full max-w-[1380px] py-10">
-        <WorkspaceManagement
-          currentUser={{
-            email: user.email ?? "Unknown email",
-            name: currentUserName,
-          }}
-          error={error ?? undefined}
-          initialPanelMode={panelMode}
-          initialWorkspaceId={selectedWorkspace?.id}
-          workspaces={workspaces}
-        />
-      </div>
-    </RelayAppShell>
+    <div className="mx-auto min-h-full w-full max-w-[1380px] py-10">
+      <WorkspaceManagement
+        currentUser={{
+          email: user.email ?? "Unknown email",
+          name: currentUserName,
+        }}
+        error={error ?? undefined}
+        initialPanelMode={panelMode}
+        initialWorkspaceId={selectedWorkspace?.id}
+        workspaces={workspaces}
+      />
+    </div>
   );
 }
 
