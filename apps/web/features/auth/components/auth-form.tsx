@@ -82,18 +82,17 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
 
     const { error } = await authCall;
 
-    setIsLoading(false);
-
     if (error) {
+      setIsLoading(false);
       setMessage(error.message);
       return;
     }
 
     if (mode === "sign-in") {
-      setMessage("Signed in. Opening your workspace.");
       router.push("/app");
       router.refresh();
     } else {
+      setIsLoading(false);
       const params = new URLSearchParams({ email });
       router.push(`/verify-email?${params.toString()}`);
     }
@@ -223,7 +222,7 @@ export function AuthForm({ mode, onModeChange }: AuthFormProps) {
         {isLoading ? (
           <>
             <Loader2 className="size-4 animate-spin text-white" />
-            {mode === "sign-in" ? "Signing in" : "Creating account"}
+            {mode === "sign-in" ? "Opening workspace" : "Creating account"}
           </>
         ) : mode === "sign-in" ? (
           "Sign In"
