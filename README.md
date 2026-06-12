@@ -74,6 +74,49 @@ supabase link --project-ref ohpfhplapyplckemchul
 The Supabase project is linked in `supabase/config.toml`. Local API and web env
 files are configured on this machine but are intentionally ignored by git.
 
+## Deploy frontend to Vercel
+
+This is a monorepo. Create the Vercel project from the repository root, but set
+the Vercel project root directory to:
+
+```txt
+apps/web
+```
+
+Use the default Next.js settings after that:
+
+```txt
+Install Command: npm install
+Build Command: npm run build
+Output Directory: .next
+```
+
+Configure these environment variables in Vercel for the frontend project:
+
+```txt
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+API_ORIGIN
+```
+
+`API_ORIGIN` should point to the deployed Fastify API. If the API is still only
+running locally, frontend pages that call the API will build, but those API
+requests will fail in production until the API is deployed somewhere reachable.
+
+CLI deploy from this repo:
+
+```sh
+cd apps/web
+npx vercel
+```
+
+For a production deploy:
+
+```sh
+cd apps/web
+npx vercel --prod
+```
+
 Current frontend structure:
 
 ```txt
