@@ -269,12 +269,12 @@ export function RelayAppShell({
               ? "xl:grid-cols-[56px_minmax(0,1fr)_360px]"
               : secondarySidebarOpen
                 ? "xl:grid-cols-[248px_minmax(0,1fr)_360px]"
-                : "xl:grid-cols-[280px_minmax(0,1fr)_360px]"
+                : "xl:grid-cols-[224px_minmax(0,1fr)_360px]"
             : sidebarCollapsed
               ? "xl:grid-cols-[56px_minmax(0,1fr)]"
               : secondarySidebarOpen
                 ? "xl:grid-cols-[248px_minmax(0,1fr)]"
-                : "xl:grid-cols-[280px_minmax(0,1fr)]"
+                : "xl:grid-cols-[224px_minmax(0,1fr)]"
         }`}
       >
         <aside className="hidden min-h-0 shrink-0 overflow-hidden border-r border-[#E8E8E8] bg-white xl:flex">
@@ -323,11 +323,11 @@ export function RelayAppShell({
               </div>
             </>
           ) : (
-            <div className="flex min-h-0 w-[280px] flex-col overflow-hidden bg-white">
-              <div className="flex h-12 shrink-0 items-center justify-between px-5">
+            <div className="flex min-h-0 w-[224px] flex-col overflow-hidden bg-white">
+              <div className="flex h-12 shrink-0 items-center justify-between px-3">
                 <Link
                   href="/app"
-                  className="flex items-center gap-3 rounded-[0.8rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/20"
+                  className="flex items-center gap-2.5 rounded-[0.8rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/20"
                 >
                   <Image
                     src="/relay-logo.svg"
@@ -734,7 +734,7 @@ function MainSidebarPanel({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="px-4 py-3">
+      <div className="px-2.5 py-3">
         <Link
           href="/app/workspaces?panel=create"
           className="flex w-fit items-center gap-1.5 rounded-[0.55rem] px-1.5 py-1 text-[0.72rem] font-semibold text-[#007AFF] transition-colors hover:bg-[#EFF6FF]"
@@ -744,7 +744,7 @@ function MainSidebarPanel({
         </Link>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <MainSidebarSection label="Navigation">
           {navItems.map((item) => (
             <MainSidebarItem key={item.label} item={item} onNavigate={onNavigate} />
@@ -799,7 +799,7 @@ function MainSidebarPanel({
         ) : null}
       </nav>
 
-      <div className="shrink-0 px-4 pb-4 pt-4">
+      <div className="shrink-0 px-2.5 pb-3 pt-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

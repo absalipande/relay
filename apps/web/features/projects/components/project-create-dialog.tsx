@@ -11,15 +11,17 @@ import {
 } from "@/components/ui/dialog";
 import { ProjectCreateForm } from "@/features/projects/components/project-create-form";
 import { Folder, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type ProjectCreateDialogProps = {
+  children?: ReactNode;
   triggerVariant?: "button" | "icon";
   workspaceName: string;
   workspaceId: string;
 };
 
 export function ProjectCreateDialog({
+  children,
   triggerVariant = "button",
   workspaceName,
   workspaceId,
@@ -39,7 +41,9 @@ export function ProjectCreateDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {triggerVariant === "icon" ? (
+        {children ? (
+          children
+        ) : triggerVariant === "icon" ? (
           <Button
             type="button"
             variant="ghost"

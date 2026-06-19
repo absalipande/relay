@@ -1,5 +1,5 @@
 import { WorkspaceManagement } from "@/features/workspaces/components/workspace-management";
-import { apiFetch, type ApiWorkspace } from "@/lib/api/server";
+import { apiFetch, type ApiProject, type ApiWorkspace } from "@/lib/api/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -27,6 +27,7 @@ export default async function WorkspacesPage({
     "/workspaces",
   );
   const workspaces = data?.workspaces ?? [];
+  const projectCounts = await getProjectCounts(workspaces);
   const selectedWorkspace = params.workspace
     ? workspaces.find((workspace) => workspace.id === params.workspace)
     : undefined;
@@ -53,10 +54,25 @@ export default async function WorkspacesPage({
         error={error ?? undefined}
         initialPanelMode={panelMode}
         initialWorkspaceId={selectedWorkspace?.id}
+        projectCounts={projectCounts}
         workspaces={workspaces}
       />
     </div>
   );
+}
+
+async function getProjectCounts(workspaces: ApiWorkspace[]) {
+  const entries = await Promise.all(
+    workspaces.map(async (workspace) => {
+      const { data } = await apiFetch<{ projects: ApiProject[] }>(
+        `/workspaces/${workspace.id}/projects`,
+      );
+
+      return [workspace.id, data?.projects.length ?? 0] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries);
 }
 
 function getMetadataString(value: unknown) {

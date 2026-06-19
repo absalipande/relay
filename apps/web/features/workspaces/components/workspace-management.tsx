@@ -13,7 +13,6 @@ import {
   Grid2X2,
   List,
   Loader2,
-  Mail,
   Plus,
   Search,
   Settings,
@@ -58,7 +57,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { ProjectCreateDialog as ExistingProjectCreateDialog } from "@/features/projects/components/project-create-dialog";
 import { WorkspaceCreateForm } from "@/features/workspaces/components/workspace-create-form";
 import {
   deleteWorkspace,
@@ -68,6 +67,8 @@ import {
 } from "@/features/workspaces/actions";
 import type { ApiWorkspace } from "@/lib/api/server";
 
+const workspaceIconColors = ["#007AFF", "#4F46E5", "#F97316", "#22C55E", "#DB2777"] as const;
+
 type WorkspaceManagementProps = {
   currentUser: {
     email: string;
@@ -76,6 +77,7 @@ type WorkspaceManagementProps = {
   error?: string;
   initialPanelMode: "details" | "ai" | "create";
   initialWorkspaceId?: string;
+  projectCounts: Record<string, number>;
   workspaces: ApiWorkspace[];
 };
 
@@ -84,6 +86,7 @@ export function WorkspaceManagement({
   error,
   initialPanelMode,
   initialWorkspaceId,
+  projectCounts,
   workspaces,
 }: WorkspaceManagementProps) {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(initialWorkspaceId);
@@ -106,7 +109,7 @@ export function WorkspaceManagement({
 
     return {
       ...workspace,
-      updated_at: openedAtByWorkspaceId[workspace.id] ?? workspace.updated_at,
+      last_opened_at: openedAtByWorkspaceId[workspace.id] ?? workspace.last_opened_at,
     };
   }, [openedAtByWorkspaceId, selectedWorkspaceId, workspaces]);
   const filteredWorkspaces = useMemo(() => {
@@ -133,11 +136,16 @@ export function WorkspaceManagement({
   const isFirstWorkspace = !hasWorkspaces && !error;
 
   function selectWorkspace(workspaceId: string) {
-    setOpenedAtByWorkspaceId((current) => ({
-      ...current,
-      [workspaceId]: new Date().toISOString(),
-    }));
-    void markWorkspaceOpened(workspaceId);
+    void markWorkspaceOpened(workspaceId).then((result) => {
+      const updatedAt = result.updatedAt;
+
+      if (updatedAt) {
+        setOpenedAtByWorkspaceId((current) => ({
+          ...current,
+          [workspaceId]: updatedAt,
+        }));
+      }
+    });
     setSelectedWorkspaceId(workspaceId);
     setPanelMode("details");
     setPanelIntent("idle");
@@ -176,10 +184,10 @@ export function WorkspaceManagement({
         <div className="shrink-0">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold leading-tight tracking-tight text-[#030712]">
+              <h1 className="text-xl font-semibold leading-tight tracking-[-0.01em] text-[#111111]">
                 Workspaces
               </h1>
-              <p className="mt-1.5 max-w-2xl text-[0.82rem] leading-5 text-[#64748B]">
+              <p className="mt-1 max-w-2xl text-[0.76rem] leading-5 text-[#71717A]">
                 {isFirstWorkspace
                   ? "Create your first workspace to start organizing projects, tasks, files, and members."
                   : "Switch between the spaces you own, or create a new one for a team or project."}
@@ -189,7 +197,7 @@ export function WorkspaceManagement({
               <Button
                 type="button"
                 onClick={openCreatePanel}
-                className="h-9 rounded-[0.7rem] bg-[#007AFF] px-3.5 text-[0.82rem] text-white hover:bg-[#006be0]"
+                className="h-8 rounded-[0.62rem] bg-[#007AFF] px-3 text-[0.76rem] font-semibold text-white hover:bg-[#006be0]"
               >
                 New workspace
               </Button>
@@ -207,16 +215,16 @@ export function WorkspaceManagement({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search workspaces..."
-                  className="h-9 rounded-[0.65rem] border-[#E4E4E7] bg-white pl-8 text-[0.8rem] shadow-none focus-visible:border-[#007AFF]/35 focus-visible:ring-1 focus-visible:ring-[#007AFF]/10"
+                  className="h-8 rounded-[0.6rem] border-[#E4E4E7] bg-white pl-8 text-[0.76rem] shadow-none placeholder:text-[#8A8A8E] focus-visible:border-[#007AFF]/35 focus-visible:ring-1 focus-visible:ring-[#007AFF]/10"
                 />
               </Label>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex h-9 items-center rounded-[0.65rem] border border-[#E4E4E7] bg-white p-0.5">
+                <div className="flex h-8 items-center rounded-[0.6rem] border border-[#E4E4E7] bg-white p-0.5">
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={() => setSortMode("newest")}
-                    className={`h-8 rounded-[0.5rem] px-3 text-[0.78rem] font-semibold ${
+                    className={`h-7 rounded-[0.48rem] px-2.5 text-[0.72rem] font-semibold ${
                       sortMode === "newest"
                         ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
                         : "text-[#64748B] hover:bg-[#F8FAFC]"
@@ -228,7 +236,7 @@ export function WorkspaceManagement({
                     type="button"
                     variant="ghost"
                     onClick={() => setSortMode("oldest")}
-                    className={`h-8 rounded-[0.5rem] px-3 text-[0.78rem] font-semibold ${
+                    className={`h-7 rounded-[0.48rem] px-2.5 text-[0.72rem] font-semibold ${
                       sortMode === "oldest"
                         ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
                         : "text-[#64748B] hover:bg-[#F8FAFC]"
@@ -237,13 +245,13 @@ export function WorkspaceManagement({
                     Oldest
                   </Button>
                 </div>
-                <div className="flex h-9 items-center rounded-[0.65rem] border border-[#E4E4E7] bg-white p-0.5">
+                <div className="flex h-8 items-center rounded-[0.6rem] border border-[#E4E4E7] bg-white p-0.5">
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
                     onClick={() => setViewMode("grid")}
-                    className={`size-8 rounded-[0.5rem] ${
+                    className={`size-7 rounded-[0.48rem] ${
                       viewMode === "grid"
                         ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
                         : "text-[#64748B] hover:bg-[#F8FAFC]"
@@ -257,7 +265,7 @@ export function WorkspaceManagement({
                     size="icon"
                     variant="ghost"
                     onClick={() => setViewMode("list")}
-                    className={`size-8 rounded-[0.5rem] ${
+                    className={`size-7 rounded-[0.48rem] ${
                       viewMode === "list"
                         ? "bg-[#EFF6FF] text-[#007AFF] hover:bg-[#EFF6FF]"
                         : "text-[#64748B] hover:bg-[#F8FAFC]"
@@ -296,6 +304,7 @@ export function WorkspaceManagement({
                   <WorkspaceCard
                     key={workspace.id}
                     onSelect={() => selectWorkspace(workspace.id)}
+                    projectCount={projectCounts[workspace.id] ?? 0}
                     selected={workspace.id === selectedWorkspace?.id}
                     workspace={workspace}
                     viewMode={viewMode}
@@ -306,10 +315,10 @@ export function WorkspaceManagement({
                   <span className="grid size-14 place-items-center rounded-[1rem] bg-[#EFF6FF] text-[#007AFF] ring-1 ring-[#DBEAFE]">
                     <FolderPlus className="size-6" />
                   </span>
-                  <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#030712]">
+                  <h3 className="mt-5 text-base font-semibold tracking-[-0.01em] text-[#111111]">
                     No workspaces yet
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-[#64748B]">
+                  <p className="mt-2 text-xs leading-5 text-[#64748B]">
                     Use the form on the right to create your first workspace for a team, client,
                     department, or personal project.
                   </p>
@@ -320,10 +329,10 @@ export function WorkspaceManagement({
                     <span className="mx-auto grid size-14 place-items-center rounded-[1rem] bg-white text-[#007AFF] shadow-[0_18px_54px_-42px_rgba(15,23,42,0.5)] ring-1 ring-[#DBEAFE]">
                       <FolderPlus className="size-7" />
                     </span>
-                    <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#030712]">
+                    <h3 className="mt-5 text-base font-semibold tracking-[-0.01em] text-[#111111]">
                       No matching workspaces
                     </h3>
-                    <p className="mt-3 text-sm leading-6 text-[#64748B]">
+                    <p className="mt-2 text-xs leading-5 text-[#64748B]">
                       Try another name or URL.
                     </p>
                   </div>
@@ -347,16 +356,17 @@ export function WorkspaceManagement({
               mode={panelMode}
               onClose={closePanel}
               onModeChange={changePanelMode}
+              projectCount={projectCounts[selectedWorkspace.id] ?? 0}
               workspace={selectedWorkspace}
             />
           ) : panelIntent === "create" || isFirstWorkspace ? (
             <>
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-base font-semibold tracking-[-0.01em]">
                     {isFirstWorkspace ? "Create your first workspace" : "Create workspace"}
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                  <p className="mt-1.5 text-xs leading-5 text-slate-500">
                     {isFirstWorkspace
                       ? "Create a space for your team, client, department, or personal project."
                       : "Choose a name and URL. You will start as the workspace owner."}
@@ -383,8 +393,8 @@ export function WorkspaceManagement({
                 <span className="mx-auto grid size-12 place-items-center rounded-[0.9rem] bg-[#EFF6FF] text-[#007AFF]">
                   <Grid2X2 className="size-5" />
                 </span>
-                <h2 className="mt-4 text-lg font-semibold">Workspace details</h2>
-                <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-slate-500">
+                <h2 className="mt-4 text-base font-semibold">Workspace details</h2>
+                <p className="mx-auto mt-2 max-w-[240px] text-xs leading-5 text-slate-500">
                   Select a workspace to view details, or use New workspace to create another one.
                 </p>
               </div>
@@ -398,11 +408,13 @@ export function WorkspaceManagement({
 
 function WorkspaceCard({
   onSelect,
+  projectCount,
   selected,
   workspace,
   viewMode,
 }: {
   onSelect: () => void;
+  projectCount: number;
   selected: boolean;
   workspace: ApiWorkspace;
   viewMode: "grid" | "list";
@@ -430,28 +442,33 @@ function WorkspaceCard({
         />
 
         <div className="flex min-w-0 items-center gap-3 pl-0 md:pl-2">
-          <WorkspaceMark name={workspace.name} />
+          <WorkspaceMark
+            color={workspace.icon_color}
+            initials={workspace.icon_initials}
+            name={workspace.name}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h3 className="truncate text-[0.9rem] font-semibold text-[#111827]">
+              <h3 className="truncate text-[0.82rem] font-semibold text-[#111827]">
                 {workspace.name}
               </h3>
               {selected ? <CurrentBadge /> : null}
             </div>
-            <p className="mt-0.5 truncate text-[0.78rem] font-medium text-[#64748B]">
+            <p className="mt-0.5 truncate text-[0.72rem] font-medium text-[#64748B]">
               /{workspace.slug}
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-          <div className="flex items-center gap-4 text-[0.8rem] font-medium text-[#64748B]">
+          <div className="flex items-center gap-4 text-[0.74rem] font-medium text-[#64748B]">
             <span className="flex items-center gap-2">
               <Users className="size-4" />1 member
             </span>
             <span className="text-[#CBD5E1]">·</span>
             <span className="flex items-center gap-2">
-              <FolderKanban className="size-4" />0 projects
+              <FolderKanban className="size-4" />
+              {formatCount(projectCount, "project")}
             </span>
           </div>
         </div>
@@ -475,27 +492,32 @@ function WorkspaceCard({
       } cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93C5FD]`}
     >
       <div className="flex min-w-0 items-start gap-3 text-left">
-        <WorkspaceMark name={workspace.name} />
+        <WorkspaceMark
+          color={workspace.icon_color}
+          initials={workspace.icon_initials}
+          name={workspace.name}
+        />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-[0.9rem] font-semibold text-[#111827]">
+            <span className="truncate text-[0.82rem] font-semibold text-[#111827]">
               {workspace.name}
             </span>
             {selected ? <CurrentBadge /> : null}
           </span>
-          <span className="mt-0.5 block truncate text-[0.78rem] font-medium text-[#64748B]">
+          <span className="mt-0.5 block truncate text-[0.72rem] font-medium text-[#64748B]">
             /{workspace.slug}
           </span>
         </span>
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-[0.8rem] font-medium text-[#64748B]">
+      <div className="mt-3 flex items-center gap-4 text-[0.74rem] font-medium text-[#64748B]">
         <span className="flex items-center gap-2">
           <Users className="size-4" />1 member
         </span>
         <span>·</span>
         <span className="flex items-center gap-2">
-          <FolderKanban className="size-4" />0 projects
+          <FolderKanban className="size-4" />
+          {formatCount(projectCount, "project")}
         </span>
       </div>
     </article>
@@ -510,14 +532,21 @@ function CurrentBadge() {
   );
 }
 
-function WorkspaceMark({ name }: { name: string }) {
+function WorkspaceMark({
+  color,
+  initials,
+  name,
+}: {
+  color?: string | null;
+  initials?: string | null;
+  name: string;
+}) {
   return (
     <span
-      className={`grid size-9 shrink-0 place-items-center rounded-[0.65rem] text-xs font-semibold text-white ${getWorkspaceColor(
-        name,
-      )}`}
+      className="grid size-9 shrink-0 place-items-center rounded-[0.65rem] text-xs font-semibold text-white"
+      style={{ backgroundColor: color ?? getWorkspaceColor(name) }}
     >
-      {getWorkspaceInitials(name)}
+      {initials ?? getWorkspaceInitials(name)}
     </span>
   );
 }
@@ -525,6 +554,7 @@ function WorkspaceMark({ name }: { name: string }) {
 function WorkspaceInspector({
   currentUser,
   onClose,
+  projectCount,
   workspace,
 }: {
   currentUser: {
@@ -534,24 +564,92 @@ function WorkspaceInspector({
   mode: "details" | "ai";
   onClose: () => void;
   onModeChange: (mode: "details" | "ai") => void;
+  projectCount: number;
   workspace: ApiWorkspace;
 }) {
-  const lastOpened = getRelativeWorkspaceTime(workspace.updated_at);
+  const [copiedSlug, setCopiedSlug] = useState(false);
+  const [lastOpenedAt, setLastOpenedAt] = useState(workspace.last_opened_at);
+  const [lastOpened, setLastOpened] = useState(() =>
+    getRelativeWorkspaceTime(workspace.last_opened_at),
+  );
+
+  useEffect(() => {
+    setLastOpenedAt(workspace.last_opened_at);
+  }, [workspace.id, workspace.last_opened_at]);
+
+  useEffect(() => {
+    setLastOpened(getRelativeWorkspaceTime(lastOpenedAt));
+
+    const interval = window.setInterval(() => {
+      setLastOpened(getRelativeWorkspaceTime(lastOpenedAt));
+    }, 30_000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [lastOpenedAt]);
+
+  useEffect(() => {
+    if (!copiedSlug) return;
+
+    const timeout = window.setTimeout(() => {
+      setCopiedSlug(false);
+    }, 1600);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [copiedSlug]);
+
+  async function copyWorkspaceSlug() {
+    const value = `/${workspace.slug}`;
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedSlug(true);
+    } catch {
+      setCopiedSlug(false);
+    }
+  }
+
+  function openWorkspace() {
+    void markWorkspaceOpened(workspace.id).then((result) => {
+      if (result.updatedAt) {
+        setLastOpenedAt(result.updatedAt);
+      }
+    });
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <WorkspaceMark name={workspace.name} />
+          <WorkspaceMark
+            color={workspace.icon_color}
+            initials={workspace.icon_initials}
+            name={workspace.name}
+          />
           <div className="min-w-0">
-            <h2 className="truncate text-xl font-semibold tracking-tight">{workspace.name}</h2>
+            <h2 className="truncate text-lg font-semibold tracking-[-0.01em]">{workspace.name}</h2>
             <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#22C55E]">
               <span className="size-1.5 rounded-full bg-[#22C55E]" />
               Current workspace
             </div>
             <p className="mt-1.5 flex items-center gap-1.5 truncate text-xs font-medium text-slate-500">
-              /{workspace.slug}
-              <Copy className="size-3.5 shrink-0 text-[#94A3B8]" />
+              <span className="truncate">/{workspace.slug}</span>
+              <button
+                type="button"
+                onClick={copyWorkspaceSlug}
+                className="grid size-5 shrink-0 place-items-center rounded-[0.35rem] text-[#94A3B8] transition-colors hover:bg-[#F4F4F5] hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/20"
+                aria-label={copiedSlug ? "Workspace URL copied" : "Copy workspace URL"}
+                title={copiedSlug ? "Copied" : "Copy workspace URL"}
+              >
+                {copiedSlug ? (
+                  <Check className="size-3.5 text-[#16A34A]" />
+                ) : (
+                  <Copy className="size-3.5" />
+                )}
+              </button>
             </p>
           </div>
         </div>
@@ -571,7 +669,7 @@ function WorkspaceInspector({
         <div className="rounded-[0.75rem] border border-[#E4E4E7] bg-white px-3">
           <ContextRow icon={Users} label="Your role" value={capitalize(workspace.role)} />
           <ContextRow icon={Users} label="Members" value="1" />
-          <ContextRow icon={FolderKanban} label="Projects" value="0" />
+          <ContextRow icon={FolderKanban} label="Projects" value={`${projectCount}`} />
           <ContextRow
             icon={CalendarDays}
             label="Created"
@@ -589,14 +687,9 @@ function WorkspaceInspector({
 
         <Button
           asChild
-          className="h-9 w-full rounded-[0.65rem] bg-[#007AFF] text-[0.82rem] text-white hover:bg-[#006be0]"
+          className="h-8 w-full rounded-[0.62rem] bg-[#007AFF] text-[0.76rem] font-semibold text-white hover:bg-[#006be0]"
         >
-          <a
-            href={`/app?workspace=${workspace.id}`}
-            onClick={() => {
-              void markWorkspaceOpened(workspace.id);
-            }}
-          >
+          <a href={`/app?workspace=${workspace.id}`} onClick={openWorkspace}>
             Open workspace
             <ExternalLink className="size-4" />
           </a>
@@ -611,12 +704,15 @@ function WorkspaceInspector({
         <div>
           <h3 className="text-sm font-semibold">Manage</h3>
           <div className="mt-2 space-y-2">
-            <InviteMembersDialog workspace={workspace}>
-              <InspectorAction icon={Users} label="Invite members" />
-            </InviteMembersDialog>
-            <CreateProjectDialog workspace={workspace}>
+            <InspectorAction
+              disabled
+              icon={Users}
+              label="Invite members"
+              title="Invites are not available yet"
+            />
+            <ExistingProjectCreateDialog workspaceId={workspace.id} workspaceName={workspace.name}>
               <InspectorAction icon={FolderPlus} label="Create project" />
-            </CreateProjectDialog>
+            </ExistingProjectCreateDialog>
             <WorkspaceDeleteDialog workspace={workspace}>
               <InspectorAction destructive icon={Trash2} label="Delete workspace" />
             </WorkspaceDeleteDialog>
@@ -624,81 +720,6 @@ function WorkspaceInspector({
         </div>
       </div>
     </div>
-  );
-}
-
-function InviteMembersDialog({
-  children,
-  workspace,
-}: {
-  children: ReactNode;
-  workspace: ApiWorkspace;
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Invite members</DialogTitle>
-          <DialogDescription>
-            Prepare an invite for {workspace.name}. Member invitations will be sent once the team
-            invite endpoint is available.
-          </DialogDescription>
-        </DialogHeader>
-        <form className="space-y-4">
-          <Label htmlFor={`invite-email-${workspace.id}`} className="space-y-2">
-            <span className="text-sm font-semibold text-[#334155]">Email address</span>
-            <Input
-              id={`invite-email-${workspace.id}`}
-              type="email"
-              placeholder="teammate@example.com"
-              className="h-10 rounded-[0.8rem]"
-            />
-          </Label>
-          <Button type="button" disabled className="h-10 w-full rounded-[0.8rem]">
-            <Mail className="size-4" />
-            Send invite
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function CreateProjectDialog({
-  children,
-  workspace,
-}: {
-  children: ReactNode;
-  workspace: ApiWorkspace;
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create project</DialogTitle>
-          <DialogDescription>
-            Start a project inside {workspace.name}. Project creation will be connected when the
-            projects API lands.
-          </DialogDescription>
-        </DialogHeader>
-        <form className="space-y-4">
-          <Label htmlFor={`project-name-${workspace.id}`} className="space-y-2">
-            <span className="text-sm font-semibold text-[#334155]">Project name</span>
-            <Input
-              id={`project-name-${workspace.id}`}
-              placeholder="Website launch"
-              className="h-10 rounded-[0.8rem]"
-            />
-          </Label>
-          <Button type="button" disabled className="h-10 w-full rounded-[0.8rem]">
-            <FolderPlus className="size-4" />
-            Create project
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -755,26 +776,53 @@ function WorkspaceSettingsPanel({
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(workspace.name);
   const [slug, setSlug] = useState(workspace.slug);
+  const [iconInitials, setIconInitials] = useState(
+    workspace.icon_initials ?? getWorkspaceInitials(workspace.name),
+  );
+  const [iconColor, setIconColor] = useState(
+    workspace.icon_color ?? getWorkspaceColor(workspace.name),
+  );
   const [lastSavedName, setLastSavedName] = useState(workspace.name);
   const [lastSavedSlug, setLastSavedSlug] = useState(workspace.slug);
+  const [lastSavedIconInitials, setLastSavedIconInitials] = useState(iconInitials);
+  const [lastSavedIconColor, setLastSavedIconColor] = useState(iconColor);
   const [error, setError] = useState<string | null>(null);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [recentlySaved, setRecentlySaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!canEdit || !autoSaveEnabled) return;
+    if (!canEdit) return;
 
     const nextName = name.trim();
     const nextSlug = slug.trim();
-    if (nextName === lastSavedName && nextSlug === lastSavedSlug) return;
+    const nextIconInitials = iconInitials.trim().toUpperCase();
+    const nextIconColor = iconColor;
+    if (
+      nextName === lastSavedName &&
+      nextSlug === lastSavedSlug &&
+      nextIconInitials === lastSavedIconInitials &&
+      nextIconColor === lastSavedIconColor
+    ) {
+      return;
+    }
 
     const timeout = window.setTimeout(() => {
       startTransition(async () => {
-        const result = await updateWorkspaceIdentity(workspace.id, nextName, nextSlug);
+        const result = await updateWorkspaceIdentity(
+          workspace.id,
+          nextName,
+          nextSlug,
+          nextIconInitials,
+          nextIconColor,
+        );
 
         if (result.message) {
           setError(
-            result.fieldErrors?.name?.[0] ?? result.fieldErrors?.slug?.[0] ?? result.message,
+            result.fieldErrors?.name?.[0] ??
+              result.fieldErrors?.slug?.[0] ??
+              result.fieldErrors?.icon_initials?.[0] ??
+              result.fieldErrors?.icon_color?.[0] ??
+              result.message,
           );
           return;
         }
@@ -782,20 +830,37 @@ function WorkspaceSettingsPanel({
         setError(null);
         setLastSavedName(nextName);
         setLastSavedSlug(nextSlug);
+        setLastSavedIconInitials(nextIconInitials);
+        setLastSavedIconColor(nextIconColor);
+        setRecentlySaved(true);
         router.refresh();
       });
     }, 700);
 
     return () => window.clearTimeout(timeout);
-  }, [autoSaveEnabled, canEdit, lastSavedName, lastSavedSlug, name, router, slug, workspace.id]);
+  }, [
+    canEdit,
+    iconColor,
+    iconInitials,
+    lastSavedIconColor,
+    lastSavedIconInitials,
+    lastSavedName,
+    lastSavedSlug,
+    name,
+    router,
+    slug,
+    workspace.id,
+  ]);
 
-  const saveLabel = isPending
-    ? "Saving"
-    : name.trim() === lastSavedName && slug.trim() === lastSavedSlug
-      ? "Saved"
-      : autoSaveEnabled
-        ? "Editing"
-        : "Unsaved";
+  useEffect(() => {
+    if (!recentlySaved) return;
+
+    const timeout = window.setTimeout(() => setRecentlySaved(false), 1200);
+
+    return () => window.clearTimeout(timeout);
+  }, [recentlySaved]);
+
+  const statusLabel = isPending ? "Saving..." : recentlySaved ? "Saved" : null;
   const workspaceUrl = `relay.app/${slug}`;
 
   async function copyWorkspaceUrl() {
@@ -872,11 +937,10 @@ function WorkspaceSettingsPanel({
         <section className="min-h-0 overflow-y-auto p-6">
           <div className="flex items-start gap-4">
             <span
-              className={`grid size-12 shrink-0 place-items-center rounded-[0.75rem] text-base font-semibold text-white ${getWorkspaceColor(
-                name,
-              )}`}
+              className="grid size-12 shrink-0 place-items-center rounded-[0.75rem] text-base font-semibold text-white"
+              style={{ backgroundColor: iconColor }}
             >
-              {getWorkspaceInitials(name)}
+              {iconInitials}
             </span>
             <div className="min-w-0">
               <h3 className="truncate text-base font-semibold tracking-tight text-[#111827]">
@@ -920,18 +984,17 @@ function WorkspaceSettingsPanel({
                     onChange={(event) => {
                       setName(event.target.value);
                       setSlug(slugifyWorkspaceName(event.target.value));
+                      setIconInitials(getWorkspaceInitials(event.target.value));
                     }}
                     aria-invalid={Boolean(error)}
                     className="h-9 flex-1 border-0 bg-transparent text-xs shadow-none focus-visible:ring-0"
                   />
-                  <span className="mr-3 flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#22C55E]">
-                    {isPending ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Check className="size-3.5" />
-                    )}
-                    {saveLabel}
-                  </span>
+                  {statusLabel ? (
+                    <span className="mr-3 flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#64748B]">
+                      {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                      {statusLabel}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-xs text-[#64748B]">This is the name of your workspace.</p>
               </div>
@@ -945,9 +1008,11 @@ function WorkspaceSettingsPanel({
                   <span className="flex min-w-0 flex-1 items-center px-3 text-xs font-semibold text-[#334155]">
                     {slug}
                   </span>
-                  <span className="mr-3 flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#22C55E]">
-                    {copied ? "Copied" : "Saved"}
-                  </span>
+                  {copied ? (
+                    <span className="mr-3 flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#64748B]">
+                      Copied
+                    </span>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-xs text-[#64748B]">
                   This is your workspace&apos;s unique URL.
@@ -956,23 +1021,42 @@ function WorkspaceSettingsPanel({
 
               <div>
                 <h5 className="text-xs font-semibold text-[#334155]">Workspace icon</h5>
-                <div className="mt-3 flex items-center gap-4">
+                <div className="mt-3 flex items-center gap-3">
                   <span
-                    className={`grid size-10 shrink-0 place-items-center rounded-[0.7rem] text-sm font-semibold text-white ${getWorkspaceColor(
-                      name,
-                    )}`}
+                    className="grid size-10 shrink-0 place-items-center rounded-[0.7rem] text-sm font-semibold text-white"
+                    style={{ backgroundColor: iconColor }}
                   >
-                    {getWorkspaceInitials(name)}
+                    {iconInitials}
                   </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 rounded-[0.75rem] border-[#E4E4E7] bg-white px-3 text-xs font-semibold"
-                  >
-                    Change icon
-                  </Button>
+                  <Input
+                    value={iconInitials}
+                    disabled={!canEdit}
+                    maxLength={3}
+                    onChange={(event) => {
+                      setIconInitials(event.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase());
+                    }}
+                    aria-label="Workspace icon initials"
+                    className="h-9 w-20 rounded-[0.7rem] border-[#E4E4E7] bg-white text-center text-xs font-semibold uppercase shadow-none focus-visible:ring-1 focus-visible:ring-[#007AFF]/15"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    {workspaceIconColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        disabled={!canEdit}
+                        onClick={() => setIconColor(color)}
+                        className={`size-6 rounded-full ring-offset-2 transition ${
+                          iconColor === color ? "ring-2 ring-[#111111]" : "ring-1 ring-black/10"
+                        }`}
+                        style={{ backgroundColor: color }}
+                        aria-label={`Use ${color} as workspace icon color`}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <p className="mt-2 text-xs text-[#64748B]">JPG, PNG or SVG. Max size 2MB.</p>
+                <p className="mt-2 text-xs text-[#64748B]">
+                  Use initials and a color for a clean workspace mark.
+                </p>
               </div>
 
               {error ? (
@@ -980,23 +1064,6 @@ function WorkspaceSettingsPanel({
                   {error}
                 </p>
               ) : null}
-            </div>
-          </div>
-
-          <div className="mt-6 border-t border-[#E4E4E7] pt-5">
-            <h4 className="text-xs font-semibold text-[#111827]">Preferences</h4>
-            <div className="mt-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold text-[#334155]">Automatic name saving</p>
-                <p className="mt-1 text-xs text-[#64748B]">
-                  Save changes to the workspace name automatically.
-                </p>
-              </div>
-              <Switch
-                checked={autoSaveEnabled}
-                onCheckedChange={setAutoSaveEnabled}
-                disabled={!canEdit}
-              />
             </div>
           </div>
         </section>
@@ -1020,7 +1087,7 @@ function WorkspaceSettingsPanel({
           <DialogClose asChild>
             <Button
               type="button"
-              className="h-10 min-w-32 rounded-[0.75rem] bg-[#4F46E5] text-xs font-semibold text-white hover:bg-[#4338CA]"
+              className="h-10 min-w-32 rounded-[0.75rem] bg-[#007AFF] text-xs font-semibold text-white hover:bg-[#4338CA]"
             >
               Done
             </Button>
@@ -1101,23 +1168,27 @@ const InspectorAction = forwardRef<HTMLButtonElement, InspectorActionProps>(
     { destructive = false, icon: Icon, label, className = "", ...props },
     ref,
   ) {
+    const disabled = props.disabled;
+
     return (
       <Button
         ref={ref}
         type="button"
         variant="outline"
-        className={`h-9 w-full justify-between rounded-[0.65rem] border-[#E4E4E7] bg-white px-3 text-[0.8rem] ${
-          destructive
-            ? "text-red-600 hover:bg-red-50 hover:text-red-700"
-            : "text-[#334155] hover:bg-[#F8FAFC]"
+        className={`h-9 w-full justify-between rounded-[0.65rem] border-[#E4E4E7] px-3 text-[0.8rem] ${
+          disabled
+            ? "cursor-not-allowed bg-[#FAFAFA] text-[#A1A1AA] opacity-70 hover:bg-[#FAFAFA] hover:text-[#A1A1AA]"
+            : destructive
+              ? "text-red-600 hover:bg-red-50 hover:text-red-700"
+              : "bg-white text-[#334155] hover:bg-[#F4F4F5]"
         } ${className}`}
         {...props}
       >
         <span className="flex items-center gap-2">
-          <Icon className="size-3.5" />
+          <Icon className={disabled ? "size-3.5 text-[#A1A1AA]" : "size-3.5"} />
           {label}
         </span>
-        <ChevronRight className="size-3.5 text-[#94A3B8]" />
+        <ChevronRight className={`size-3.5 ${disabled ? "text-[#D4D4D8]" : "text-[#94A3B8]"}`} />
       </Button>
     );
   },
@@ -1154,26 +1225,36 @@ function getWorkspaceInitials(name: string) {
 }
 
 function getWorkspaceColor(name: string) {
-  const colors = ["bg-[#2563EB]", "bg-[#4F46E5]", "bg-[#F97316]", "bg-[#22C55E]", "bg-[#DB2777]"];
   const index = [...name].reduce((sum, character) => {
     return sum + character.charCodeAt(0);
   }, 0);
 
-  return colors[index % colors.length];
+  return workspaceIconColors[index % workspaceIconColors.length];
 }
 
-function getRelativeWorkspaceTime(value: string) {
+function getRelativeWorkspaceTime(value: string | null) {
+  if (!value) return "Never";
+
   const timestamp = new Date(value).getTime();
   const now = Date.now();
-  const diffDays = Math.max(0, Math.floor((now - timestamp) / (1000 * 60 * 60 * 24)));
+  const diffMs = Math.max(0, now - timestamp);
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return "Just now";
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  if (diffHours < 24) return `${diffHours} hr ago`;
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 14) return "1 week ago";
   if (diffDays < 31) return `${Math.floor(diffDays / 7)} weeks ago`;
 
   return formatDate(value);
+}
+
+function formatCount(value: number, noun: string) {
+  return `${value} ${noun}${value === 1 ? "" : "s"}`;
 }
 
 function slugifyWorkspaceName(value: string) {

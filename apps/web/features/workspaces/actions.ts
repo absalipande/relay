@@ -21,9 +21,16 @@ export type DeleteWorkspaceState = {
 export type WorkspaceIdentityUpdateState = {
   message: string | null;
   fieldErrors?: {
+    icon_color?: string[];
+    icon_initials?: string[];
     name?: string[];
     slug?: string[];
   };
+};
+
+type WorkspaceOpenedState = {
+  message: string | null;
+  updatedAt?: string;
 };
 
 const workspaceSchema = z.object({
@@ -52,6 +59,20 @@ const workspaceSchema = z.object({
 const workspaceIdentitySchema = workspaceSchema.pick({
   name: true,
   slug: true,
+}).extend({
+  icon_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Choose an icon color.")
+    .nullable()
+    .optional(),
+  icon_initials: z
+    .string()
+    .trim()
+    .min(1, "Use at least 1 character.")
+    .max(3, "Use 3 characters or less.")
+    .regex(/^[A-Za-z0-9]+$/, "Use letters or numbers.")
+    .nullable()
+    .optional(),
 });
 
 export async function createWorkspace(
@@ -135,20 +156,28 @@ export async function updateWorkspace(
   }
 
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   revalidatePath("/app/workspaces/new");
-  redirect(`/app/workspaces/new?workspace=${workspaceId}&panel=details`);
+  redirect(`/app/workspaces?workspace=${workspaceId}&panel=details`);
 }
 
 export async function updateWorkspaceIdentity(
   workspaceId: string,
   name: string,
   slug: string,
+  iconInitials?: string | null,
+  iconColor?: string | null,
 ): Promise<WorkspaceIdentityUpdateState> {
   if (workspaceId.length === 0) {
     return { message: "Choose a workspace to update." };
   }
 
-  const parsed = workspaceIdentitySchema.safeParse({ name, slug });
+  const parsed = workspaceIdentitySchema.safeParse({
+    icon_color: iconColor,
+    icon_initials: iconInitials,
+    name,
+    slug,
+  });
 
   if (!parsed.success) {
     return {
@@ -162,6 +191,8 @@ export async function updateWorkspaceIdentity(
     {
       method: "PATCH",
       body: JSON.stringify({
+        icon_color: parsed.data.icon_color,
+        icon_initials: parsed.data.icon_initials?.toUpperCase(),
         name: parsed.data.name,
         slug: parsed.data.slug,
       }),
@@ -173,16 +204,23 @@ export async function updateWorkspaceIdentity(
   }
 
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   revalidatePath("/app/workspaces/new");
   return { message: null };
 }
 
-export async function markWorkspaceOpened(workspaceId: string) {
+export async function markWorkspaceOpened(
+  workspaceId: string,
+): Promise<WorkspaceOpenedState> {
   if (workspaceId.length === 0) {
     return { message: "Choose a workspace to open." };
   }
 
-  const { error } = await apiFetch<{ workspace: unknown }>(
+  const { data, error } = await apiFetch<{
+    workspace: {
+      last_opened_at: string | null;
+    };
+  }>(
     `/workspaces/${workspaceId}/opened`,
     {
       method: "POST",
@@ -193,9 +231,19 @@ export async function markWorkspaceOpened(workspaceId: string) {
     return { message: error };
   }
 
+  if (!data) {
+    return {
+      message: "Workspace opened, but the updated timestamp was not returned.",
+    };
+  }
+
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   revalidatePath("/app/workspaces/new");
-  return { message: null };
+  return {
+    message: null,
+    updatedAt: data.workspace.last_opened_at ?? undefined,
+  };
 }
 
 export async function deleteWorkspace(
@@ -217,8 +265,9 @@ export async function deleteWorkspace(
   }
 
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   revalidatePath("/app/workspaces/new");
-  redirect("/app/workspaces/new");
+  redirect("/app/workspaces");
 }
 
 export async function signOut() {

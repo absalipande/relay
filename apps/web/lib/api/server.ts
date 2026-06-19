@@ -4,9 +4,12 @@ const defaultApiOrigin = "http://localhost:4000";
 
 export type ApiWorkspace = {
   id: string;
+  icon_color: string | null;
+  icon_initials: string | null;
   name: string;
   slug: string;
   created_at: string;
+  last_opened_at: string | null;
   updated_at: string;
   role: string;
 };

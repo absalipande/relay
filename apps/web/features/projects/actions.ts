@@ -75,6 +75,7 @@ export async function createProject(
   }
 
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   return { message: null };
 }
 
@@ -101,5 +102,6 @@ export async function archiveProject(
   }
 
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   return { message: null };
 }

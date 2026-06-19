@@ -19,21 +19,57 @@ const updateWorkspaceSchema = createWorkspaceSchema.partial().refine(
   },
 );
 
+const workspaceIconSchema = z.object({
+  icon_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullable()
+    .optional(),
+  icon_initials: z
+    .string()
+    .trim()
+    .min(1)
+    .max(3)
+    .regex(/^[A-Za-z0-9]+$/)
+    .nullable()
+    .optional(),
+});
+
+const updateWorkspacePayloadSchema = createWorkspaceSchema
+  .partial()
+  .merge(workspaceIconSchema)
+  .refine(
+    (value) =>
+      value.name !== undefined ||
+      value.slug !== undefined ||
+      value.icon_initials !== undefined ||
+      value.icon_color !== undefined,
+    {
+      message: "Provide workspace fields to update.",
+    },
+  );
+
 type WorkspaceMembershipRow = {
   role: string;
   workspaces:
     | {
         id: string;
+        icon_color: string | null;
+        icon_initials: string | null;
         name: string;
         slug: string;
         created_at: string;
+        last_opened_at: string | null;
         updated_at: string;
       }
     | {
         id: string;
+        icon_color: string | null;
+        icon_initials: string | null;
         name: string;
         slug: string;
         created_at: string;
+        last_opened_at: string | null;
         updated_at: string;
       }[]
     | null;
@@ -58,7 +94,7 @@ export async function workspaceRoutes(app: FastifyInstance) {
 
       const { data, error } = await supabase
         .from("workspace_members")
-        .select("role, workspaces(id, name, slug, created_at, updated_at)")
+        .select("role, workspaces(id, icon_color, icon_initials, name, slug, created_at, last_opened_at, updated_at)")
         .eq("user_id", request.user.id)
         .order("created_at", { ascending: true });
 
@@ -164,7 +200,7 @@ export async function workspaceRoutes(app: FastifyInstance) {
       const { workspaceId } = request.params as { workspaceId: string };
       const { data, error } = await supabase
         .from("workspaces")
-        .select("id, name, slug, created_at, updated_at")
+        .select("id, icon_color, icon_initials, name, slug, created_at, last_opened_at, updated_at")
         .eq("id", workspaceId)
         .single();
 
@@ -190,9 +226,9 @@ export async function workspaceRoutes(app: FastifyInstance) {
       const { workspaceId } = request.params as { workspaceId: string };
       const { data, error } = await app.supabase
         .from("workspaces")
-        .update({ updated_at: new Date().toISOString() })
+        .update({ last_opened_at: new Date().toISOString() })
         .eq("id", workspaceId)
-        .select("id, name, slug, created_at, updated_at")
+        .select("id, icon_color, icon_initials, name, slug, created_at, last_opened_at, updated_at")
         .single();
 
       if (error) {
@@ -220,7 +256,7 @@ export async function workspaceRoutes(app: FastifyInstance) {
         return reply.code(503).send({ error: "Supabase is not configured." });
       }
 
-      const parsed = updateWorkspaceSchema.safeParse(request.body);
+      const parsed = updateWorkspacePayloadSchema.safeParse(request.body);
 
       if (!parsed.success) {
         return reply.code(400).send({
@@ -234,7 +270,7 @@ export async function workspaceRoutes(app: FastifyInstance) {
         .from("workspaces")
         .update(parsed.data)
         .eq("id", workspaceId)
-        .select("id, name, slug, created_at, updated_at")
+        .select("id, icon_color, icon_initials, name, slug, created_at, last_opened_at, updated_at")
         .single();
 
       if (error) {
