@@ -61,12 +61,12 @@ export default async function TaskPage({ params }: TaskPageProps) {
   const doneItems = task.checklist_items.filter((item) => item.is_done).length;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-4">
       <div>
         <Button
           asChild
           variant="ghost"
-          className="mb-4 h-8 rounded-[0.7rem] px-2 text-[#64748B] hover:bg-[#F4F4F5]"
+          className="mb-3 h-7 rounded-[0.55rem] px-2 text-xs text-[#64748B] hover:bg-[#F4F4F5]"
         >
           <Link
             href={
@@ -75,17 +75,17 @@ export default async function TaskPage({ params }: TaskPageProps) {
                 : `/app?workspace=${workspaceId}`
             }
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-3.5" />
             {project ? "Project" : "Workspace"}
           </Link>
         </Button>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
           {workspace?.name ?? "Workspace"}
           {project ? ` / ${project.key}` : ""}
         </p>
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-[32px] font-semibold leading-tight tracking-tight">
+            <h1 className="text-2xl font-semibold leading-tight tracking-tight">
               {task.title}
             </h1>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -103,7 +103,7 @@ export default async function TaskPage({ params }: TaskPageProps) {
               </Badge>
               {task.due_date ? (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#64748B]">
-                  <CalendarDays className="size-4" />
+                  <CalendarDays className="size-3.5" />
                   Due {formatDate(task.due_date)}
                 </span>
               ) : null}
@@ -112,24 +112,24 @@ export default async function TaskPage({ params }: TaskPageProps) {
         </div>
       </div>
 
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="space-y-5">
-          <div className="rounded-[0.95rem] bg-white p-5 ring-1 ring-[#EEF2F7]">
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div className="space-y-3">
+          <div className="rounded-[0.7rem] bg-white p-3 ring-1 ring-[#EEF2F7]">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#94A3B8]">
               Description
             </p>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#64748B]">
+            <p className="mt-2 whitespace-pre-wrap text-xs leading-5 text-[#64748B]">
               {task.description || "No description yet."}
             </p>
           </div>
 
-          <div className="rounded-[0.95rem] bg-white p-5 ring-1 ring-[#EEF2F7]">
+          <div className="rounded-[0.7rem] bg-white p-3 ring-1 ring-[#EEF2F7]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#94A3B8]">
                   Checklist
                 </p>
-                <h2 className="mt-2 text-lg font-semibold tracking-tight">
+                <h2 className="mt-1 text-base font-semibold tracking-tight">
                   {doneItems}/{task.checklist_items.length} done
                 </h2>
               </div>
@@ -143,18 +143,18 @@ export default async function TaskPage({ params }: TaskPageProps) {
                 />
               </div>
             ) : (
-              <p className="mt-3 text-sm leading-6 text-[#64748B]">
+              <p className="mt-2 text-xs leading-5 text-[#64748B]">
                 No checklist items yet.
               </p>
             )}
           </div>
         </div>
 
-        <aside className="rounded-[0.95rem] bg-[#F8FAFC] p-5 ring-1 ring-[#EEF2F7]">
+        <aside className="rounded-[0.7rem] bg-[#F8FAFC] p-3 ring-1 ring-[#EEF2F7]">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#94A3B8]">
             Task context
           </p>
-          <dl className="mt-4 space-y-4 text-sm">
+          <dl className="mt-3 space-y-3 text-xs">
             <div>
               <dt className="font-semibold text-[#334155]">Project</dt>
               <dd className="mt-1 text-[#64748B]">
@@ -175,9 +175,9 @@ export default async function TaskPage({ params }: TaskPageProps) {
               <dd className="mt-1 flex items-center gap-2 text-[#64748B]">
                 {doneItems === task.checklist_items.length &&
                 task.checklist_items.length > 0 ? (
-                  <CheckCircle2 className="size-4 text-[#059669]" />
+                  <CheckCircle2 className="size-3.5 text-[#059669]" />
                 ) : (
-                  <Circle className="size-4 text-[#94A3B8]" />
+                  <Circle className="size-3.5 text-[#94A3B8]" />
                 )}
                 {doneItems} of {task.checklist_items.length} complete
               </dd>

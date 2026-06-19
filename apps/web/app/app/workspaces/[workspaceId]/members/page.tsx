@@ -20,19 +20,5 @@ export default async function WorkspaceMembersPage({
     notFound();
   }
 
-  return (
-    <div className="space-y-7">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Members
-        </p>
-        <h1 className="mt-3 text-[32px] font-semibold leading-tight tracking-tight">
-          {workspace.name}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-[#64748B]">
-          Member list, invite codes, role updates, and removals will live here.
-        </p>
-      </div>
-    </div>
-  );
+  return <div aria-hidden="true" />;
 }

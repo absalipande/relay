@@ -91,7 +91,7 @@ function FirstRunPanel() {
         asChild
         className="mt-6 h-10 rounded-[0.8rem] bg-[#007AFF] px-4 text-white hover:bg-[#006be0]"
       >
-        <Link href="/app/workspaces/new">
+        <Link href="/app/workspaces?panel=create">
           <Plus className="size-4" />
           Create workspace
         </Link>

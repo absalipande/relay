@@ -4,7 +4,7 @@ The file `/Users/absalipande/Downloads/nextjs-jira-clone-master.zip` is a useful
 
 ## Product Strategy
 
-Relay is a Jira and ClickUp lite product: structured enough for real project tracking, lighter and calmer than both, and eventually differentiated by contextual intelligence. Use the Jira clone as Relay's base product skeleton, then implement the same core flows with Relay's own stack, calmer interface, stronger permissions, and later AI-native context features.
+Relay is a Jira and ClickUp lite product: structured enough for real project tracking, lighter and calmer than both, and differentiated by a fullscreen context-first shell. Use the Jira clone as Relay's base product skeleton, then implement the same core flows with Relay's own stack, calmer interface, stronger permissions, focused navigation, and later AI-native context features.
 
 The reference is strongest as a feature map:
 
@@ -22,6 +22,7 @@ Relay should reach reference parity first, but it should not stop there. The Rel
 
 - Use Supabase Auth, Postgres, RLS, and Fastify route-level permission checks instead of Appwrite documents and sessions.
 - Make task details and project details feel first-class, with a right-side context panel available for selected records.
+- Use Relay's own navigation model: full main sidebar by default, focused icon rail after choosing a destination, dynamic secondary sidebar by selected area, and a closable right inspector for selected records.
 - Add comments and activity logs earlier because they become useful project memory and later AI context.
 - Build board interactions with durable task ordering, optimistic updates, and clear status transitions.
 - Keep the UI compact, quiet, and work-focused instead of copying the reference's styling exactly.
@@ -34,8 +35,9 @@ The working rule: copy the flow, not the implementation. Match the reference's p
 Reference parity means Relay should support the core loops a user expects from the Jira clone before we over-invest in unique features:
 
 - Workspace home and workspace switching
-- Sidebar links: Home, My Tasks, Settings, Members, and project list
+- Sidebar links: Home, Projects, Tasks, Members, Settings, and project shortcuts
 - Project pages with task views as the main work surface
+- Main rail navigation with dynamic secondary sidebar sections for Home, Projects, Tasks, Members, and Settings
 - Task creation through modals, not exposed forms that dominate the page
 - Task table, Kanban, and calendar tabs
 - Task detail pages or panels with status, priority, due date, checklist, comments, and activity
@@ -47,7 +49,9 @@ Relay upgrades come after or alongside parity where they do not slow the core lo
 
 - Better permission boundaries through Supabase RLS plus Fastify checks
 - Quieter UI density than Jira or ClickUp
+- Fullscreen white app shell with centered content instead of a boxed dashboard frame
 - Task/project context panels only when useful, never permanently empty
+- Details/Ask AI right-panel tabs, with Details useful before AI is wired
 - Comments and activity logs as project memory
 - AI assistant features after the underlying work history exists
 
@@ -60,6 +64,8 @@ Relay upgrades come after or alongside parity where they do not slow the core lo
 - Workspace operations: generated invite codes, reset invite code, member roles, admin-only settings, and protected member removal/role updates.
 - Analytics direction: compact cards for task/project counts and status movement. These can become workspace and project overview sections after core task views exist.
 - Detail navigation: breadcrumbs for task/project pages, compact overview properties, and actions menus for edit/delete/archive flows.
+- Shell interaction: start with the full main sidebar; when a user chooses a destination, collapse into a Discord-like rail and reveal the contextual secondary sidebar. The Relay logo opens the full main sidebar again.
+- Inspector behavior: right panel appears for selected or detail context, can be closed, and gives space back to the main canvas.
 
 ## What To Adapt
 
@@ -68,7 +74,7 @@ Relay upgrades come after or alongside parity where they do not slow the core lo
 - File/image support should use Supabase Storage later. For now, keep avatar/project image fields optional and avoid blocking core task flows on uploads.
 - Client data should use Relay's current split: server actions where the screen is simple, TanStack Query for interactive list/detail surfaces, filters, optimistic mutations, and drag updates.
 - Validation should stay with Zod. Shared request/response schemas can move into `packages/shared` when API/frontend duplication becomes meaningful.
-- UI should follow Relay's calmer app-shell direction: compact, white-first, restrained color, Lucide icons, shadcn primitives, and no wholesale copy of the reference's card-heavy settings screens.
+- UI should follow Relay's fullscreen app-shell direction: compact, white-first, restrained color, Lucide icons, shadcn primitives, centered main content, rail plus dynamic secondary-sidebar navigation for project/task routes, and no wholesale copy of the reference's card-heavy settings screens.
 
 ## Avoid Copying
 
@@ -76,6 +82,7 @@ Relay upgrades come after or alongside parity where they do not slow the core lo
 - Hono middleware and route composition. Similar authorization ideas belong in Fastify plugins and per-route preHandlers.
 - Next 14 or React 18 constraints from the reference when Relay's installed versions differ.
 - Reference UI styling verbatim. Treat layout and flow as inspiration, not as a design system.
+- The reference's simpler static single-sidebar shell. Relay's actual target shell starts as `[full main sidebar] [main canvas]`, then switches to `[main rail] [secondary sidebar] [main canvas]`, plus `[right inspector]` when selected context exists.
 - Mandatory image upload in create/edit forms until Relay has a storage and image-cropping story.
 
 ## Suggested Build Order From The Reference
@@ -85,10 +92,17 @@ Relay upgrades come after or alongside parity where they do not slow the core lo
 - [x] Task detail surface: dedicated page or right context panel with status, priority, due date, checklist editing, description, and actions.
 - [x] Task view switcher: tabs for list/table first, then Kanban, then calendar.
 - [x] URL filters: status, project, assignee, due date, and later saved filters.
+- [x] Fullscreen shell foundation with default sidebar, navbar, centered canvas, and clean account/search surfaces.
+- [x] Sidebar-level project index route.
+- [x] Members/settings scaffold routes for invite, role, identity, permission, and lifecycle planning.
+- [x] Persistent rail and dynamic secondary sidebar scaffold.
+- [ ] Dynamic right inspector.
+- [ ] Populate the right inspector with real project/task data instead of placeholder context.
+- [ ] Support selected task/project context from list, board, table, and calendar interactions.
 - [ ] Workspace members and invites: invite code generation/reset, join route, member list, admin role updates, and removal confirmation.
 - [ ] Settings screens: workspace settings and project settings with rename/archive/delete controls.
 - [ ] Analytics cards: workspace/project rollups after task lifecycle data is stable.
 
 ## Current Fit With Relay
 
-Relay already has workspaces, members, projects, tasks, checklist items, the app shell, and basic create/archive/status flows. The largest useful next step from the reference is not another overview form. It is a deeper project route where task creation and task review happen in project context, followed by a task detail/context panel that makes checklist and status updates feel first-class.
+Relay already has workspaces, members, projects, tasks, checklist items, the fullscreen shell foundation, a default main sidebar, focused rail mode, dynamic secondary sidebars for Home/Projects/Tasks/Members/Settings, and basic create/archive/status flows. The largest useful next step from the reference is not another overview form. It is a deeper project route where task creation and task review happen in project context, followed by the right-inspector layer that makes checklist, comments, activity, and status updates feel first-class.

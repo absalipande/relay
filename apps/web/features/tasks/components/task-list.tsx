@@ -49,13 +49,13 @@ const priorityClass = {
 export function TaskList({ projects, tasks, workspaceId }: TaskListProps) {
   if (tasks.length === 0) {
     return (
-      <div className="grid min-h-[150px] place-items-center rounded-[0.9rem] border border-dashed border-[#D8E0EA] bg-[#F8FAFC] p-5 text-center">
+      <div className="grid min-h-[130px] place-items-center rounded-[0.7rem] border border-dashed border-[#D8E0EA] bg-[#FAFAFA] p-4 text-center">
         <div className="max-w-sm">
-          <ListChecks className="mx-auto size-6 text-[#94A3B8]" />
-          <h3 className="mt-3 text-sm font-semibold text-[#334155]">
+          <ListChecks className="mx-auto size-5 text-[#94A3B8]" />
+          <h3 className="mt-2 text-xs font-semibold text-[#334155]">
             No tasks yet
           </h3>
-          <p className="mt-2 text-sm leading-6 text-[#64748B]">
+          <p className="mt-1 text-xs leading-5 text-[#64748B]">
             Add a task to track ownership, due dates, and checklist progress.
           </p>
         </div>
@@ -64,7 +64,7 @@ export function TaskList({ projects, tasks, workspaceId }: TaskListProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {(["todo", "in_progress", "done"] as const).map((status) => {
         const groupTasks = tasks.filter((task) => task.status === status);
         if (groupTasks.length === 0) return null;
@@ -79,7 +79,7 @@ export function TaskList({ projects, tasks, workspaceId }: TaskListProps) {
                 {groupTasks.length}
               </span>
             </div>
-            <div className="divide-y divide-[#F1F5F9] overflow-hidden rounded-[0.9rem] ring-1 ring-[#EEF2F7]">
+            <div className="divide-y divide-[#F1F5F9] overflow-hidden rounded-[0.7rem] ring-1 ring-[#ECECEC]">
               {groupTasks.map((task) => (
                 <TaskRow
                   key={task.id}
@@ -110,25 +110,25 @@ function TaskRow({
   const doneItems = task.checklist_items.filter((item) => item.is_done).length;
 
   return (
-    <article className="bg-white p-4 transition-colors hover:bg-[#FAFAFA]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <article className="bg-white p-3 transition-colors hover:bg-[#FAFAFA]">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <StatusIcon className="size-4 text-[#007AFF]" />
+            <StatusIcon className="size-3.5 text-[#007AFF]" />
             <Link
               href={`/app/workspaces/${workspaceId}/tasks/${task.id}`}
-              className="truncate text-sm font-semibold text-[#111111] hover:text-[#007AFF]"
+              className="truncate text-xs font-semibold text-[#111111] hover:text-[#007AFF]"
             >
               {task.title}
             </Link>
             <Badge
               variant="outline"
-              className={`rounded-[0.55rem] ${priorityClass[task.priority]}`}
+              className={`rounded-[0.45rem] px-1.5 py-0 text-[0.68rem] ${priorityClass[task.priority]}`}
             >
               {task.priority}
             </Badge>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-[#94A3B8]">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.68rem] font-medium text-[#94A3B8]">
             {project ? (
               <span>
                 {project.key} - {project.name}
@@ -147,7 +147,7 @@ function TaskRow({
             ) : null}
           </div>
           {task.description ? (
-            <p className="mt-3 text-sm leading-6 text-[#64748B]">
+            <p className="mt-2 text-xs leading-5 text-[#64748B]">
               {task.description}
             </p>
           ) : null}
@@ -157,7 +157,7 @@ function TaskRow({
       </div>
 
       {task.checklist_items.length > 0 ? (
-        <div className="mt-4 space-y-2 rounded-[0.8rem] bg-[#F8FAFC] p-3">
+        <div className="mt-3 space-y-1.5 rounded-[0.6rem] bg-[#FAFAFA] p-2.5">
           {task.checklist_items.map((item) => (
             <ChecklistItemRow
               key={item.id}
@@ -181,7 +181,7 @@ function TaskStatusControls({
   workspaceId: string;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1 rounded-[0.75rem] bg-[#F4F4F5] p-1">
+    <div className="flex shrink-0 items-center gap-1 rounded-[0.55rem] bg-[#F4F4F5] p-0.5">
       {(["todo", "in_progress", "done"] as const).map((status) => (
         <TaskStatusButton
           key={status}
@@ -218,7 +218,7 @@ function TaskStatusButton({
         variant="ghost"
         size="sm"
         disabled={pending || active}
-        className={`h-7 rounded-[0.55rem] px-2 text-xs ${
+        className={`h-6 rounded-[0.45rem] px-1.5 text-[0.68rem] ${
           active
             ? "bg-white text-[#007AFF] shadow-sm"
             : "text-[#64748B] hover:bg-white hover:text-[#111111]"
@@ -248,7 +248,7 @@ function ChecklistItemRow({
   const Icon = isDone ? CheckCircle2 : Circle;
 
   return (
-    <form action={formAction} className="flex items-center gap-2">
+    <form action={formAction} className="flex items-center gap-1.5">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="itemId" value={itemId} />
       <input type="hidden" name="isDone" value={String(!isDone)} />
@@ -257,13 +257,13 @@ function ChecklistItemRow({
         variant="ghost"
         size="icon"
         disabled={pending}
-        className="size-6 shrink-0 rounded-full text-[#94A3B8] hover:bg-white hover:text-[#007AFF]"
+        className="size-5 shrink-0 rounded-full text-[#94A3B8] hover:bg-white hover:text-[#007AFF]"
         aria-label={isDone ? `Mark ${title} incomplete` : `Mark ${title} done`}
       >
-        <Icon className={`size-4 ${isDone ? "text-[#059669]" : ""}`} />
+        <Icon className={`size-3.5 ${isDone ? "text-[#059669]" : ""}`} />
       </Button>
       <span
-        className={`text-sm ${
+        className={`text-xs ${
           isDone ? "text-[#94A3B8] line-through" : "text-[#334155]"
         }`}
       >

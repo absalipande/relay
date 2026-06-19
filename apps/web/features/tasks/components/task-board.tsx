@@ -30,7 +30,7 @@ const priorityClass = {
 
 export function TaskBoard({ projects, tasks, workspaceId }: TaskBoardProps) {
   return (
-    <div className="grid gap-3 lg:grid-cols-3">
+    <div className="grid gap-2.5 lg:grid-cols-3">
       {(["todo", "in_progress", "done"] as const).map((status) => {
         const StatusIcon = statusIcon[status];
         const columnTasks = tasks.filter((task) => task.status === status);
@@ -38,12 +38,12 @@ export function TaskBoard({ projects, tasks, workspaceId }: TaskBoardProps) {
         return (
           <section
             key={status}
-            className="min-h-[24rem] rounded-[0.9rem] bg-[#F8FAFC] p-3 ring-1 ring-[#EEF2F7]"
+            className="min-h-[18rem] rounded-[0.7rem] bg-[#FAFAFA] p-2.5 ring-1 ring-[#ECECEC]"
           >
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <StatusIcon className="size-4 text-[#007AFF]" />
-                <h2 className="text-sm font-semibold text-[#334155]">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <StatusIcon className="size-3.5 text-[#007AFF]" />
+                <h2 className="text-xs font-semibold text-[#334155]">
                   {statusLabels[status]}
                 </h2>
               </div>
@@ -62,20 +62,20 @@ export function TaskBoard({ projects, tasks, workspaceId }: TaskBoardProps) {
                   <Link
                     key={task.id}
                     href={`/app/workspaces/${workspaceId}/tasks/${task.id}`}
-                    className="block rounded-[0.8rem] bg-white p-3 ring-1 ring-[#EEF2F7] transition-colors hover:bg-[#FAFAFA]"
+                    className="block rounded-[0.6rem] bg-white p-2.5 ring-1 ring-[#ECECEC] transition-colors hover:bg-[#FAFAFA]"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-[#111111]">
+                      <h3 className="line-clamp-2 text-xs font-semibold leading-4 text-[#111111]">
                         {task.title}
                       </h3>
                       <Badge
                         variant="outline"
-                        className={`shrink-0 rounded-[0.55rem] ${priorityClass[task.priority]}`}
+                        className={`shrink-0 rounded-[0.45rem] px-1.5 py-0 text-[0.68rem] ${priorityClass[task.priority]}`}
                       >
                         {task.priority}
                       </Badge>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-[#94A3B8]">
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[0.68rem] font-medium text-[#94A3B8]">
                       {project ? <span>{project.key}</span> : null}
                       {task.due_date ? (
                         <span className="inline-flex items-center gap-1">

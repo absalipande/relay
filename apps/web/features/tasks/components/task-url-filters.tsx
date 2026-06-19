@@ -52,7 +52,7 @@ export function TaskUrlFilters({
     <div className="flex flex-wrap items-center gap-2">
       <NativeSelect
         aria-label="Filter by status"
-        className="w-40"
+        className="h-8 w-36 rounded-[0.55rem] text-xs"
         value={searchParams.get("status") ?? "all"}
         onChange={(event) => setFilter("status", event.target.value)}
       >
@@ -65,7 +65,7 @@ export function TaskUrlFilters({
       </NativeSelect>
       <NativeSelect
         aria-label="Filter by priority"
-        className="w-40"
+        className="h-8 w-36 rounded-[0.55rem] text-xs"
         value={searchParams.get("priority") ?? "all"}
         onChange={(event) => setFilter("priority", event.target.value)}
       >
@@ -78,7 +78,7 @@ export function TaskUrlFilters({
       </NativeSelect>
       <input
         aria-label="Filter by due date"
-        className="h-10 rounded-[0.8rem] border border-[#E4E4E7] bg-white px-3 text-sm shadow-none outline-none focus-visible:border-[#007AFF]/45 focus-visible:ring-2 focus-visible:ring-[#007AFF]/12"
+        className="h-8 rounded-[0.55rem] border border-[#E4E4E7] bg-white px-2.5 text-xs shadow-none outline-none focus-visible:border-[#007AFF]/45 focus-visible:ring-2 focus-visible:ring-[#007AFF]/12"
         type="date"
         value={searchParams.get("dueDate") ?? ""}
         onChange={(event) => setFilter("dueDate", event.target.value || "all")}
@@ -86,10 +86,10 @@ export function TaskUrlFilters({
       <Button
         type="button"
         variant="ghost"
-        className="h-10 rounded-[0.8rem] px-3 text-[#64748B] hover:bg-[#F4F4F5]"
+        className="h-8 rounded-[0.55rem] px-2.5 text-xs text-[#64748B] hover:bg-[#F4F4F5]"
         onClick={resetFilters}
       >
-        <RotateCcw className="size-4" />
+        <RotateCcw className="size-3.5" />
         Reset
       </Button>
     </div>

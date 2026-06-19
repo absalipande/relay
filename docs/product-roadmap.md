@@ -8,7 +8,7 @@ The product name is Relay. Any older planning references to Worklane should be r
 
 ## Product Direction
 
-Relay should feel like the useful center of Jira and ClickUp: structured enough for serious project tracking, flexible enough for small teams, and calmer than both. The differentiator is a persistent contextual right panel that starts as an inspector for selected projects/tasks and later becomes an AI assistant that can summarize, draft, and extract next actions from workspace context.
+Relay should feel like the useful center of Jira and ClickUp: structured enough for serious project tracking, flexible enough for small teams, and calmer than both. The differentiator is a fullscreen context-first shell: a full main sidebar by default, a persistent icon rail plus dynamic secondary sidebar after choosing a destination, and eventually a dynamic right panel that starts as an inspector before becoming an AI assistant.
 
 The detailed product and visual direction is tracked in [docs/product-direction.md](docs/product-direction.md).
 The Jira clone reference is the base/core feature blueprint. Relay should recreate its main flows first, then improve them with Relay's stack, calmer UI, stronger permissions, comments/activity history, and later AI context.
@@ -37,11 +37,18 @@ The Jira clone reference is the base/core feature blueprint. Relay should recrea
 - [ ] Durable Kanban ordering and drag updates
 - [ ] Task table view
 - [ ] Calendar view
-- [x] Contained workspace shell with sidebar, navbar, and main canvas
+- [x] Fullscreen workspace shell with default main sidebar, focused rail navigation, dynamic secondary sidebar, navbar, centered main canvas, and account/search surfaces
+- [x] Sidebar-level Projects page
+- [x] Persistent rail and dynamic secondary sidebar scaffold
+- [x] Secondary sidebar behavior and page feature contracts documented
+- [ ] Dynamic right panel scaffold
 - [ ] Basic workspace/project settings
 - [x] Project details page with project-scoped modal task creation and task views
 - [x] Task details page with checklist editing and status controls
-- [ ] Members page with invite and role management
+- [x] Members page scaffold for invite and role management
+- [x] Workspace settings scaffold for identity, permissions, and lifecycle controls
+- [ ] Real project/task inspector content in the right panel
+- [ ] Close/reopen and selected-context behavior for right panel across project/task surfaces
 
 ## Version 1 Polish
 
@@ -53,6 +60,8 @@ The Jira clone reference is the base/core feature blueprint. Relay should recrea
 - [ ] Workspace overview dashboard
 - [ ] Project analytics
 - [ ] Responsive UI polish
+- [ ] Focused shell polish for project/task views
+- [ ] Right-panel resize/persisted width
 
 ## Near-Term Product Direction
 
@@ -63,19 +72,29 @@ actions such as creating a project.
 
 Next work should move deeper workflows into dedicated product surfaces:
 
-1. Reference-style task views: table, Kanban, and calendar tabs, with task
+1. Sidebar destination polish: Home, Projects, Tasks, Members, and Settings
+   should each land on a useful route-level surface inside the new rail +
+   secondary-sidebar shell, following the documented split between route/view
+   items and scroll-synced "On this page" anchors.
+2. Focused shell layer: refine rail interactions, main-sidebar reopen behavior,
+   secondary sidebar sections, centered work canvas, and closable right
+   inspector as one coherent system.
+3. Reference-style task views: table, Kanban, and calendar tabs, with task
    creation in a modal rather than exposed inline forms.
-2. Members and invites: member list, invite code, role changes, and removal
+4. Real inspector details: project summary, task details, status, priority,
+   assignee, due date, checklist, comments, and activity should appear in the
+   right panel where useful.
+5. Members and invites: member list, invite code, role changes, and removal
    confirmation.
-3. Workspace/project settings: rename, archive/delete, and role-gated controls.
-4. Task details: title, description, status, priority, due date, checklist
+6. Workspace/project settings: rename, archive/delete, and role-gated controls.
+7. Task details: title, description, status, priority, due date, checklist
    editing, comments, and activity.
-5. Workspace overview polish: compact, mostly borderless sections that blend
+8. Workspace overview polish: compact, mostly borderless sections that blend
    with the white app shell and avoid unnecessary scrolling.
 
 ## AI Assistant Panel
 
-Relay should eventually include a right-side AI assistant panel similar to the reference UI: a contextual chat panel that can reason over selected workspace/project/task content and generate useful artifacts.
+Relay should eventually include a right-side AI assistant panel inside the dynamic inspector: a contextual chat panel that can reason over selected workspace/project/task content and generate useful artifacts.
 
 ### Core Use Cases
 
@@ -91,6 +110,7 @@ Relay should eventually include a right-side AI assistant panel similar to the r
 ### UX Direction
 
 - [ ] Right-side resizable assistant panel
+- [ ] Details/Ask AI tab model inside the dynamic right panel
 - [ ] Context chips for selected project/task/files
 - [ ] Prompt input pinned to the bottom
 - [ ] Response area with save/copy actions

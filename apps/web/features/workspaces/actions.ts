@@ -93,6 +93,7 @@ export async function createWorkspace(
   }
 
   revalidatePath("/app");
+  revalidatePath("/app/workspaces");
   revalidatePath("/app/workspaces/new");
   redirect(redirectTo);
 }

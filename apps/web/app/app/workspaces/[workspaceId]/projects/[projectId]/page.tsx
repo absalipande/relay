@@ -70,32 +70,32 @@ export default async function ProjectPage({
   const tasks = filterTasks(taskData?.tasks ?? [], filters);
 
   return (
-    <div className="space-y-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Button
             asChild
             variant="ghost"
-            className="mb-4 h-8 rounded-[0.7rem] px-2 text-[#64748B] hover:bg-[#F4F4F5]"
+            className="mb-3 h-7 rounded-[0.55rem] px-2 text-xs text-[#64748B] hover:bg-[#F4F4F5]"
           >
             <Link href={`/app?workspace=${workspaceId}`}>
-              <ArrowLeft className="size-4" />
+              <ArrowLeft className="size-3.5" />
               Workspace
             </Link>
           </Button>
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="mt-1 grid size-10 shrink-0 place-items-center rounded-[0.85rem] bg-[#EEF6FF] text-[#007AFF]">
-              <FolderKanban className="size-4" />
+          <div className="flex min-w-0 items-start gap-2">
+            <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-[0.6rem] bg-[#EEF6FF] text-[#007AFF]">
+              <FolderKanban className="size-3.5" />
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                 {workspace?.name ?? "Workspace"} / {project.key}
               </p>
-              <h1 className="mt-2 truncate text-[32px] font-semibold leading-tight tracking-tight">
+              <h1 className="mt-1 truncate text-2xl font-semibold leading-tight tracking-tight">
                 {project.name}
               </h1>
               {project.description ? (
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#64748B]">
+                <p className="mt-1 max-w-3xl text-xs leading-5 text-[#64748B]">
                   {project.description}
                 </p>
               ) : null}
@@ -105,12 +105,12 @@ export default async function ProjectPage({
 
       </div>
 
-      <section className="space-y-3">
+      <section className="space-y-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#94A3B8]">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#94A3B8]">
             Project tasks
           </p>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight">
+          <h2 className="mt-1 text-base font-semibold tracking-tight">
             {tasks.length} visible
           </h2>
         </div>

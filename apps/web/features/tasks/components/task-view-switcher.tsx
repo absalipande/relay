@@ -40,28 +40,28 @@ export function TaskViewSwitcher({
   return (
     <Tabs
       value={activeView}
-      className="overflow-hidden rounded-[0.95rem] bg-white p-4 ring-1 ring-[#EEF2F7]"
+      className="overflow-hidden rounded-[0.7rem] bg-white p-2.5 ring-1 ring-[#EEF2F7]"
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <TabsList className="h-9 rounded-[0.8rem] bg-[#F4F4F5]">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <TabsList className="h-8 rounded-[0.6rem] bg-[#F4F4F5]">
           <TabsTrigger
             value="table"
             asChild
-            className="h-7 rounded-[0.65rem] px-3 text-xs"
+            className="h-6 rounded-[0.5rem] px-2.5 text-xs"
           >
             <a href={tableHref}>Table</a>
           </TabsTrigger>
           <TabsTrigger
             value="kanban"
             asChild
-            className="h-7 rounded-[0.65rem] px-3 text-xs"
+            className="h-6 rounded-[0.5rem] px-2.5 text-xs"
           >
             <a href={kanbanHref}>Kanban</a>
           </TabsTrigger>
           <TabsTrigger
             value="calendar"
             asChild
-            className="h-7 rounded-[0.65rem] px-3 text-xs"
+            className="h-6 rounded-[0.5rem] px-2.5 text-xs"
           >
             <a href={calendarHref}>Calendar</a>
           </TabsTrigger>
@@ -70,7 +70,7 @@ export function TaskViewSwitcher({
       </div>
 
       {filters ? (
-        <div className="border-y border-[#F1F5F9] py-4">{filters}</div>
+        <div className="border-y border-[#F1F5F9] py-2.5">{filters}</div>
       ) : null}
 
       <TabsContent value="table" className="mt-0">

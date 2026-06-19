@@ -1,15 +1,15 @@
 import { apiFetch, type ApiWorkspace } from "@/lib/api/server";
 import { notFound } from "next/navigation";
 
-type WorkspaceTasksPageProps = {
+type WorkspaceProjectsPageProps = {
   params: Promise<{
     workspaceId: string;
   }>;
 };
 
-export default async function WorkspaceTasksPage({
+export default async function WorkspaceProjectsPage({
   params,
-}: WorkspaceTasksPageProps) {
+}: WorkspaceProjectsPageProps) {
   const { workspaceId } = await params;
   const { data } = await apiFetch<{ workspaces: ApiWorkspace[] }>(
     "/workspaces",

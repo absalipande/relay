@@ -19,12 +19,12 @@ const priorityClass = {
 export function TaskTable({ projects, tasks, workspaceId }: TaskTableProps) {
   if (tasks.length === 0) {
     return (
-      <div className="grid min-h-[220px] place-items-center rounded-[0.85rem] border border-dashed border-[#D8E0EA] bg-[#F8FAFC] p-6 text-center">
+      <div className="grid min-h-[160px] place-items-center rounded-[0.7rem] border border-dashed border-[#D8E0EA] bg-[#FAFAFA] p-4 text-center">
         <div>
-          <h3 className="text-sm font-semibold text-[#334155]">
+          <h3 className="text-xs font-semibold text-[#334155]">
             No tasks yet
           </h3>
-          <p className="mt-2 text-sm leading-6 text-[#64748B]">
+          <p className="mt-1 text-xs leading-5 text-[#64748B]">
             Create a task to start building this project.
           </p>
         </div>
@@ -33,8 +33,8 @@ export function TaskTable({ projects, tasks, workspaceId }: TaskTableProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-[0.85rem] ring-1 ring-[#EEF2F7]">
-      <div className="grid grid-cols-[minmax(0,1fr)_8rem_8rem_9rem] gap-3 bg-[#F8FAFC] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#94A3B8]">
+    <div className="overflow-hidden rounded-[0.7rem] ring-1 ring-[#ECECEC]">
+      <div className="grid grid-cols-[minmax(0,1fr)_7rem_7rem_8rem] gap-2 bg-[#FAFAFA] px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[#A1A1AA]">
         <span>Task</span>
         <span>Status</span>
         <span>Priority</span>
@@ -48,7 +48,7 @@ export function TaskTable({ projects, tasks, workspaceId }: TaskTableProps) {
             <Link
               key={task.id}
               href={`/app/workspaces/${workspaceId}/tasks/${task.id}`}
-              className="grid grid-cols-[minmax(0,1fr)_8rem_8rem_9rem] gap-3 px-4 py-3 text-sm transition-colors hover:bg-[#FAFAFA]"
+              className="grid grid-cols-[minmax(0,1fr)_7rem_7rem_8rem] gap-2 px-3 py-2.5 text-xs transition-colors hover:bg-[#FAFAFA]"
             >
               <span className="min-w-0">
                 <span className="block truncate font-semibold text-[#111111]">
@@ -66,7 +66,7 @@ export function TaskTable({ projects, tasks, workspaceId }: TaskTableProps) {
               <span className="self-center">
                 <Badge
                   variant="outline"
-                  className={`rounded-[0.55rem] ${priorityClass[task.priority]}`}
+                className={`rounded-[0.45rem] px-1.5 py-0 text-[0.68rem] ${priorityClass[task.priority]}`}
                 >
                   {task.priority}
                 </Badge>
